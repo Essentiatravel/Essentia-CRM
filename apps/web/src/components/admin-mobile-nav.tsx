@@ -21,11 +21,13 @@ import { motion, AnimatePresence } from "framer-motion";
 interface MobileNavProps {
   userName: string;
   userEmail: string;
+  onLogout: () => void;
 }
 
 export const AdminMobileNav: React.FC<MobileNavProps> = ({
   userName,
   userEmail,
+  onLogout,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -127,7 +129,7 @@ export const AdminMobileNav: React.FC<MobileNavProps> = ({
                     <p className="text-xs text-gray-600">{userEmail}</p>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" className="w-full">
+                <Button variant="outline" size="sm" className="w-full" onClick={onLogout}>
                   <LogOut className="h-4 w-4 mr-2" />
                   Sair
                 </Button>

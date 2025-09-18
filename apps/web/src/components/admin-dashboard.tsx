@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -189,7 +190,7 @@ const MetricCard: React.FC<{ metric: MetricCard }> = ({ metric }) => (
 );
 
 // Componente da barra lateral
-const Sidebar: React.FC = () => (
+const Sidebar: React.FC<{ onLogout: () => void }> = ({ onLogout }) => (
   <div className="hidden lg:block w-64 bg-white border-r border-gray-200 h-screen fixed left-0 top-0">
     <div className="p-6">
       {/* Logo */}
@@ -246,7 +247,7 @@ const Sidebar: React.FC = () => (
             <p className="text-xs text-gray-600">uzualelisson@gmail.com</p>
           </div>
         </div>
-        <Button variant="outline" size="sm" className="w-full">
+        <Button variant="outline" size="sm" className="w-full" onClick={onLogout}>
           <LogOut className="h-4 w-4 mr-2" />
           Sair
         </Button>
@@ -257,6 +258,7 @@ const Sidebar: React.FC = () => (
 
 // Componente principal do dashboard
 export const AdminDashboard: React.FC = () => {
+  const { logout } = useAuth();
   const [isAddTourModalOpen, setIsAddTourModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [dashboardStats, setDashboardStats] = useState({
@@ -317,10 +319,10 @@ export const AdminDashboard: React.FC = () => {
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Navegação mobile */}
-      <AdminMobileNav userName="ELISSON UZUAL" userEmail="uzualelisson@gmail.com" />
+      <AdminMobileNav userName="ELISSON UZUAL" userEmail="uzualelisson@gmail.com" onLogout={logout} />
       
       {/* Barra lateral */}
-      <Sidebar />
+      <Sidebar onLogout={logout} />
 
       {/* Conteúdo principal */}
       <div className="flex-1 lg:ml-64 ml-0">
