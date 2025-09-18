@@ -69,8 +69,10 @@ export default function LoginPage() {
           window.location.href = '/admin';
         } else if (data.user.userType === 'guia') {
           window.location.href = '/guia';
-        } else {
+        } else if (data.user.userType === 'cliente') {
           window.location.href = '/cliente';
+        } else {
+          window.location.href = '/';
         }
       } else {
         const errorData = await response.json();

@@ -15,40 +15,47 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { email, firstName, lastName, userType } = body;
+    const { nome, email, userType, telefone, endereco, cpf, senha } = await request.json();
 
-    // Validação dos campos obrigatórios
-    if (!email || !firstName || !lastName || !userType) {
-      return NextResponse.json({ error: 'Campos obrigatórios: email, firstName, lastName, userType' }, { status: 400 });
-    }
-
-    // Validar tipos de usuário permitidos
-    const allowedUserTypes = ['admin', 'guia', 'cliente'];
-    if (!allowedUserTypes.includes(userType)) {
-      return NextResponse.json({ error: 'Tipo de usuário inválido' }, { status: 400 });
+    if (!nome || !email || !userType || !senha) {
+      return NextResponse.json(
+        { error: 'Nome, email, tipo de usuário e senha são obrigatórios' },
+        { status: 400 }
+      );
     }
 
     // Verificar se o email já existe
-    const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1);
-    if (existingUser.length > 0) {
-      return NextResponse.json({ error: 'Email já está em uso' }, { status: 409 });
+    const existingUser = await getUserByEmail(email);
+    if (existingUser) {
+      return NextResponse.json(
+        { error: 'Email já está em uso' },
+        { status: 400 }
+      );
     }
 
-    // Criar o usuário no banco PostgreSQL
-    const userData = {
+    const newUser = await createUser({
+      nome,
       email,
-      firstName,
-      lastName,
       userType,
-      profileImageUrl: null,
-    };
+      telefone,
+      endereco,
+      cpf,
+      senha
+    });
 
-    const [newUser] = await db.insert(users).values(userData).returning();
+    // Remove a senha e hash do retorno
+    const { senha: _, password_hash: __, ...userWithoutPassword } = newUser;
 
-    return NextResponse.json(newUser, { status: 201 });
+    return NextResponse.json({
+      success: true,
+      user: userWithoutPassword
+    });
+
   } catch (error) {
     console.error('Erro ao criar usuário:', error);
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    );
   }
 }

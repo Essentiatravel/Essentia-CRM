@@ -4,13 +4,16 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface User {
   id: string;
-  email: string | null;
-  firstName: string | null;
-  lastName: string | null;
-  profileImageUrl: string | null;
-  userType: string | null;
-  createdAt: Date | null;
-  updatedAt: Date | null;
+  email: string;
+  nome: string;
+  userType: 'admin' | 'guia' | 'cliente';
+  telefone?: string;
+  endereco?: string;
+  data_nascimento?: string;
+  cpf?: string;
+  status: 'ativo' | 'inativo';
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 interface AuthContextType {

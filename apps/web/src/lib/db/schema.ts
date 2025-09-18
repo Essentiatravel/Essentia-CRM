@@ -1,4 +1,3 @@
-
 import { pgTable, text, timestamp, varchar, index } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -12,6 +11,14 @@ export const users = pgTable("users", {
   userType: varchar("user_type").notNull().default("cliente"), // admin, guia, cliente
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  nome: text('nome'),
+  telefone: text('telefone'),
+  endereco: text('endereco'),
+  data_nascimento: timestamp('data_nascimento'),
+  cpf: text('cpf'),
+  status: text('status').default('ativo'),
+  senha: text('senha'),
+  password_hash: text('password_hash')
 });
 
 // Tabela de sessões - necessária para Replit Auth

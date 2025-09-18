@@ -1,4 +1,3 @@
-
 -- Script para inicializar o banco PostgreSQL no Replit
 -- Execute este script uma vez para criar as tabelas necessárias
 
@@ -13,6 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
     last_name VARCHAR NOT NULL,
     profile_image_url VARCHAR,
     user_type VARCHAR NOT NULL DEFAULT 'cliente',
+    password_hash VARCHAR(255),
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );

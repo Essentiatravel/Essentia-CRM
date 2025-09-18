@@ -58,7 +58,7 @@ export default function Header() {
               <div className="flex items-center gap-2 text-sm">
                 <User className="h-4 w-4" />
                 <span className="hidden sm:block">{user.nome}</span>
-                <span className="text-xs text-gray-500 capitalize">({user.tipo})</span>
+                <span className="text-xs text-gray-500 capitalize">({user.userType})</span>
               </div>
               <Button variant="outline" size="sm" onClick={logout}>
                 <LogOut className="h-4 w-4" />

@@ -1,28 +1,22 @@
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserByEmail } from '@/lib/database';
+import { validateUserPassword } from '@/lib/database';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, senha } = await request.json();
+    const { email, password } = await request.json();
 
-    if (!email || !senha) {
+    if (!email || !password) {
       return NextResponse.json(
         { error: 'Email e senha são obrigatórios' },
         { status: 400 }
       );
     }
 
-    const user = await getUserByEmail(email);
+    // Validar credenciais usando hash
+    const user = await validateUserPassword(email, password);
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'Credenciais inválidas' },
-        { status: 401 }
-      );
-    }
-
-    // Verificação simples de senha (em produção, usar hash)
-    if (user.senha !== senha) {
       return NextResponse.json(
         { error: 'Credenciais inválidas' },
         { status: 401 }
@@ -36,13 +30,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Retornar dados do usuário (sem a senha)
-    const { senha: _, ...userData } = user;
-    
-    return NextResponse.json({
+    // Criar sessão
+    const sessionData = {
+      userId: user.id,
+      user: user,
+      authenticated: true,
+      expires_at: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60), // 7 days
+    };
+
+    // Criar resposta com cookie de sessão
+    const response = NextResponse.json({
       success: true,
-      user: userData
+      user: user
     });
+
+    response.cookies.set('auth-session', JSON.stringify(sessionData), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
+    });
+
+    return response;
 
   } catch (error) {
     console.error('Erro no login:', error);
@@ -52,4 +62,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
