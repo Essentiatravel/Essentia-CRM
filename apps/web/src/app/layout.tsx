@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "../index.css";
 import Providers from "@/components/providers";
-import Header from "@/components/header";
+import HeaderWrapper from "@/components/header-wrapper";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "turguide",
-  description: "turguide",
+  title: "TURGUIDE - Explore a Itália com quem entende",
+  description: "Descubra a magia da Itália com roteiros personalizados, guias locais experientes e experiências autênticas. Turismo romântico, em grupo e cultural.",
 };
 
 export default function RootLayout({
@@ -29,12 +30,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers>
-          <div className="grid grid-rows-[auto_1fr] h-svh">
-            <Header />
+        <AuthProvider>
+          <Providers>
+            <HeaderWrapper />
             {children}
-          </div>
-        </Providers>
+          </Providers>
+        </AuthProvider>
       </body>
     </html>
   );

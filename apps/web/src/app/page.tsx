@@ -1,46 +1,51 @@
-"use client"
-import { useQuery } from "@tanstack/react-query";
-import { trpc } from "@/utils/trpc";
+"use client";
 
-const TITLE_TEXT = `
- ██████╗ ███████╗████████╗████████╗███████╗██████╗
- ██╔══██╗██╔════╝╚══██╔══╝╚══██╔══╝██╔════╝██╔══██╗
- ██████╔╝█████╗     ██║      ██║   █████╗  ██████╔╝
- ██╔══██╗██╔══╝     ██║      ██║   ██╔══╝  ██╔══██╗
- ██████╔╝███████╗   ██║      ██║   ███████╗██║  ██║
- ╚═════╝ ╚══════╝   ╚═╝      ╚═╝   ╚══════╝╚═╝  ╚═╝
-
- ████████╗    ███████╗████████╗ █████╗  ██████╗██╗  ██╗
- ╚══██╔══╝    ██╔════╝╚══██╔══╝██╔══██╗██╔════╝██║ ██╔╝
-    ██║       ███████╗   ██║   ███████║██║     █████╔╝
-    ██║       ╚════██║   ██║   ██╔══██║██║     ██╔═██╗
-    ██║       ███████║   ██║   ██║  ██║╚██████╗██║  ██╗
-    ╚═╝       ╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝
- `;
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import HeroSection from "@/components/hero-section";
+import ExperienceTypes from "@/components/experience-types";
+import Destinations from "@/components/destinations";
+import Differentials from "@/components/differentials";
+import Footer from "@/components/footer";
+import AdminAccessButton from "@/components/admin-access-button";
 
 export default function Home() {
-  const healthCheck = useQuery(trpc.healthCheck.queryOptions());
-  
-  return (
-    <div className="container mx-auto max-w-3xl px-4 py-2">
-      <pre className="overflow-x-auto font-mono text-sm">{TITLE_TEXT}</pre>
-      <div className="grid gap-6">
-        <section className="rounded-lg border p-4">
-          <h2 className="mb-2 font-medium">API Status</h2>
-            <div className="flex items-center gap-2">
-              <div
-                className={`h-2 w-2 rounded-full ${healthCheck.data ? "bg-green-500" : "bg-red-500"}`}
-              />
-              <span className="text-sm text-muted-foreground">
-                {healthCheck.isLoading
-                  ? "Checking..."
-                  : healthCheck.data
-                    ? "Connected"
-                    : "Disconnected"}
-              </span>
-            </div>
-        </section>
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && user) {
+      // Redirecionar usuários logados para seus respectivos dashboards
+      if (user.tipo === 'admin') {
+        router.push('/admin');
+      } else if (user.tipo === 'guia') {
+        router.push('/guia');
+      } else if (user.tipo === 'cliente') {
+        router.push('/cliente');
+      }
+    }
+  }, [user, loading, router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Carregando...</p>
+        </div>
       </div>
-    </div>
+    );
+  }
+
+  return (
+    <main className="min-h-screen">
+      <HeroSection />
+      <ExperienceTypes />
+      <Destinations />
+      <Differentials />
+      <Footer />
+      <AdminAccessButton />
+    </main>
   );
 }
