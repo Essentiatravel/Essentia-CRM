@@ -1,23 +1,12 @@
-
 import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    // Por enquanto, retorna dados mock até o servidor estar totalmente configurado
-    const mockUsers = [
-      {
-        id: "admin-1",
-        email: "admin@turguide.com",
-        firstName: "Admin",
-        lastName: "Sistema",
-        userType: "admin",
-        profileImageUrl: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }
-    ];
-
-    return NextResponse.json(mockUsers);
+    const allUsers = await db.select().from(users).orderBy(users.createdAt);
+    return NextResponse.json(allUsers);
   } catch (error) {
     console.error('Erro ao buscar usuários:', error);
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
@@ -29,22 +18,33 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, firstName, lastName, userType } = body;
 
-    // Validação básica
+    // Validação dos campos obrigatórios
     if (!email || !firstName || !lastName || !userType) {
-      return NextResponse.json({ error: 'Campos obrigatórios faltando' }, { status: 400 });
+      return NextResponse.json({ error: 'Campos obrigatórios: email, firstName, lastName, userType' }, { status: 400 });
     }
 
-    // Simular criação de usuário (implementar com banco de dados real depois)
-    const newUser = {
-      id: `user-${Date.now()}`,
+    // Validar tipos de usuário permitidos
+    const allowedUserTypes = ['admin', 'guia', 'cliente'];
+    if (!allowedUserTypes.includes(userType)) {
+      return NextResponse.json({ error: 'Tipo de usuário inválido' }, { status: 400 });
+    }
+
+    // Verificar se o email já existe
+    const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    if (existingUser.length > 0) {
+      return NextResponse.json({ error: 'Email já está em uso' }, { status: 409 });
+    }
+
+    // Criar o usuário no banco PostgreSQL
+    const userData = {
       email,
       firstName,
       lastName,
       userType,
       profileImageUrl: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
     };
+
+    const [newUser] = await db.insert(users).values(userData).returning();
 
     return NextResponse.json(newUser, { status: 201 });
   } catch (error) {

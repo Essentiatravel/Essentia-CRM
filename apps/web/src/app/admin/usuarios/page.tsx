@@ -84,15 +84,29 @@ const UsersManagementPage = () => {
 
   const handleCreateUser = async () => {
     try {
+      // Validação dos campos obrigatórios
+      if (!newUser.email || !newUser.firstName || !newUser.lastName || !newUser.userType) {
+        alert('Por favor, preencha todos os campos obrigatórios');
+        return;
+      }
+
       const response = await fetch('/api/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(newUser),
+        body: JSON.stringify({
+          email: newUser.email,
+          firstName: newUser.firstName,
+          lastName: newUser.lastName,
+          userType: newUser.userType,
+        }),
       });
 
+      const result = await response.json();
+
       if (response.ok) {
+        alert('Usuário criado com sucesso!');
         await fetchUsers();
         setIsCreateModalOpen(false);
         setNewUser({
@@ -102,9 +116,12 @@ const UsersManagementPage = () => {
           userType: "cliente",
           password: ""
         });
+      } else {
+        alert(`Erro ao criar usuário: ${result.error || 'Erro desconhecido'}`);
       }
     } catch (error) {
       console.error('Erro ao criar usuário:', error);
+      alert('Erro ao criar usuário. Tente novamente.');
     }
   };
 
