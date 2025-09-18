@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { queryClient } from "@/utils/trpc";
 import { ThemeProvider } from "./theme-provider";
 import { Toaster } from "./ui/sonner";
+import { AuthProvider } from "../contexts/AuthContext";
 
 
 export default function Providers({
@@ -20,8 +21,10 @@ export default function Providers({
       disableTransitionOnChange
     >
       <QueryClientProvider client={queryClient}>
-        {children}
-        <ReactQueryDevtools />
+        <AuthProvider>
+          {children}
+          <ReactQueryDevtools />
+        </AuthProvider>
       </QueryClientProvider>
       <Toaster richColors />
     </ThemeProvider>

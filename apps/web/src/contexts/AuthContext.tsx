@@ -1,111 +1,90 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+// Replit Auth integration - Updated AuthContext
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { authFetch, isUnauthorizedError } from '../lib/authUtils';
 
 interface User {
   id: string;
-  nome: string;
-  email: string;
-  tipo: 'admin' | 'guia' | 'cliente';
-  telefone?: string;
-  cpf?: string;
-  data_nascimento?: string;
-  endereco?: string;
-  especialidades?: string[];
-  idiomas?: string[];
-  biografia?: string;
-  foto?: string;
-  status: string;
+  email: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  profileImageUrl: string | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, senha: string) => Promise<boolean>;
-  register: (userData: any) => Promise<boolean>;
+  login: () => void;
   logout: () => void;
-  loading: boolean;
+  isLoading: boolean;
+  isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
+  const [mounted, setMounted] = useState(false);
+  
   useEffect(() => {
-    // Verificar se há usuário salvo no localStorage
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (error) {
-        console.error('Erro ao carregar usuário:', error);
-        localStorage.removeItem('user');
-      }
-    }
-    setLoading(false);
+    setMounted(true);
   }, []);
-
-  const login = async (email: string, senha: string): Promise<boolean> => {
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, senha }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setUser(data.user);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        return true;
-      } else {
-        alert(data.error || 'Erro no login');
-        return false;
+  
+  // Use React Query to fetch user data only after component is mounted
+  const { data: user, isLoading, error } = useQuery({
+    queryKey: ['/api/auth/user'],
+    queryFn: async () => {
+      try {
+        const response = await authFetch('/api/auth/user');
+        return await response.json();
+      } catch (error) {
+        if (error instanceof Error && isUnauthorizedError(error)) {
+          // User is not authenticated, return null
+          return null;
+        }
+        throw error;
       }
-    } catch (error) {
-      console.error('Erro no login:', error);
-      alert('Erro de conexão');
-      return false;
-    }
-  };
+    },
+    retry: false,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: mounted, // Only run query after component is mounted
+  });
+  
+  // Show loading state during SSR
+  if (!mounted) {
+    return (
+      <AuthContext.Provider value={{ 
+        user: null, 
+        login: () => {}, 
+        logout: () => {}, 
+        isLoading: true,
+        isAuthenticated: false 
+      }}>
+        {children}
+      </AuthContext.Provider>
+    );
+  }
 
-  const register = async (userData: any): Promise<boolean> => {
-    try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        alert('Usuário criado com sucesso! Faça login para continuar.');
-        return true;
-      } else {
-        alert(data.error || 'Erro no cadastro');
-        return false;
-      }
-    } catch (error) {
-      console.error('Erro no cadastro:', error);
-      alert('Erro de conexão');
-      return false;
-    }
+  const login = () => {
+    // Redirect to Replit Auth login endpoint
+    window.location.href = '/api/login';
   };
 
   const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
+    // Redirect to Replit Auth logout endpoint
+    window.location.href = '/api/logout';
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ 
+      user: user || null, 
+      login, 
+      logout, 
+      isLoading,
+      isAuthenticated: !!user 
+    }}>
       {children}
     </AuthContext.Provider>
   );
@@ -118,4 +97,3 @@ export function useAuth() {
   }
   return context;
 }
-

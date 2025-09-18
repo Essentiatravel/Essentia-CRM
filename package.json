@@ -19,7 +19,17 @@
     "db:migrate": "turbo -F server db:migrate"
   },
   "dependencies": {
-    "@anthropic-ai/claude-code": "^1.0.117"
+    "@anthropic-ai/claude-code": "^1.0.117",
+    "@neondatabase/serverless": "^1.0.1",
+    "@tanstack/react-query": "^5.89.0",
+    "@types/memoizee": "^0.4.12",
+    "connect-pg-simple": "^10.0.0",
+    "drizzle-orm": "^0.44.5",
+    "express-session": "^1.18.2",
+    "memoizee": "^0.4.17",
+    "openid-client": "^6.8.0",
+    "passport": "^0.7.0",
+    "ws": "^8.18.3"
   },
   "devDependencies": {
     "turbo": "^2.5.4"
