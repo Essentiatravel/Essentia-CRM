@@ -31,18 +31,36 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { firstName, lastName, email, userType, password } = await request.json();
+    console.log('Recebendo requisição de criação de usuário...');
+    
+    const body = await request.json();
+    console.log('Dados recebidos:', { ...body, password: '[HIDDEN]' });
+    
+    const { firstName, lastName, email, userType, password } = body;
 
-    if (!firstName || !lastName || !email || !userType) {
+    // Validação mais robusta
+    if (!firstName || !lastName || !email || !userType || !password) {
+      console.log('Campos obrigatórios faltando:', { firstName: !!firstName, lastName: !!lastName, email: !!email, userType: !!userType, password: !!password });
       return NextResponse.json(
-        { error: 'Nome, sobrenome, email e tipo de usuário são obrigatórios' },
+        { error: 'Nome, sobrenome, email, tipo de usuário e senha são obrigatórios' },
         { status: 400 }
       );
     }
 
+    // Validar tipo de usuário
+    if (!['admin', 'guia', 'cliente'].includes(userType)) {
+      return NextResponse.json(
+        { error: 'Tipo de usuário inválido' },
+        { status: 400 }
+      );
+    }
+
+    console.log('Verificando se email já existe...');
+    
     // Verificar se o email já existe
     const existingUser = await getUserByEmail(email);
     if (existingUser) {
+      console.log('Email já existe:', email);
       return NextResponse.json(
         { error: 'Email já está em uso' },
         { status: 400 }
@@ -52,15 +70,16 @@ export async function POST(request: NextRequest) {
     // Combinar firstName e lastName para criar nome completo
     const nomeCompleto = `${firstName} ${lastName}`;
     
-    // Gerar senha padrão se não fornecida
-    const senhaUsuario = password || '123456';
+    console.log('Criando usuário...');
 
     const newUser = await createUser({
       nome: nomeCompleto,
       email,
       userType,
-      senha: senhaUsuario
+      senha: password
     });
+
+    console.log('Usuário criado com sucesso');
 
     // Remove a senha e hash do retorno
     const { senha: _, password_hash: __, ...userWithoutPassword } = newUser;
@@ -77,7 +96,16 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Erro ao criar usuário:', error);
+    console.error('Erro detalhado ao criar usuário na API:', error);
+    
+    // Retornar erro mais específico quando possível
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { error: `Erro ao criar usuário: ${error.message}` },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

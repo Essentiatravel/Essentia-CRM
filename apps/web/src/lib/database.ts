@@ -29,24 +29,34 @@ export async function createUser(userData: {
   endereco?: string;
   cpf?: string;
 }): Promise<User> {
-  const { email, nome, userType, senha, telefone, endereco, cpf } = userData;
-  
-  // Gerar hash da senha
-  const saltRounds = 10;
-  const password_hash = await bcrypt.hash(senha, saltRounds);
-  
-  // Gerar ID único
-  const id = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  
-  const result = await sql`
-    INSERT INTO users (
-      id, email, nome, "userType", password_hash, telefone, endereco, cpf, status, "createdAt", "updatedAt"
-    ) VALUES (
-      ${id}, ${email}, ${nome}, ${userType}, ${password_hash}, ${telefone || null}, ${endereco || null}, ${cpf || null}, 'ativo', NOW(), NOW()
-    ) RETURNING *
-  `;
-  
-  return result[0] as User;
+  try {
+    console.log('Criando usuário com dados:', { ...userData, senha: '[HIDDEN]' });
+    
+    const { email, nome, userType, senha, telefone, endereco, cpf } = userData;
+    
+    // Gerar hash da senha
+    const saltRounds = 10;
+    const password_hash = await bcrypt.hash(senha, saltRounds);
+    
+    // Gerar ID único
+    const id = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    console.log('Executando query de inserção...');
+    
+    const result = await sql`
+      INSERT INTO users (
+        id, email, nome, "userType", password_hash, telefone, endereco, cpf, status, "createdAt", "updatedAt"
+      ) VALUES (
+        ${id}, ${email}, ${nome}, ${userType}, ${password_hash}, ${telefone || null}, ${endereco || null}, ${cpf || null}, 'ativo', NOW(), NOW()
+      ) RETURNING *
+    `;
+    
+    console.log('Usuário criado com sucesso:', result[0]);
+    return result[0] as User;
+  } catch (error) {
+    console.error('Erro detalhado ao criar usuário:', error);
+    throw error;
+  }
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {

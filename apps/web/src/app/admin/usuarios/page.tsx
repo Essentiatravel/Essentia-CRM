@@ -84,11 +84,22 @@ const UsersManagementPage = () => {
 
   const handleCreateUser = async () => {
     try {
+      console.log('Iniciando criação de usuário...', { ...newUser, password: '[HIDDEN]' });
+      
       // Validação dos campos obrigatórios
       if (!newUser.email || !newUser.firstName || !newUser.lastName || !newUser.userType || !newUser.password) {
         alert('Por favor, preencha todos os campos obrigatórios incluindo a senha');
         return;
       }
+
+      // Validação de email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(newUser.email)) {
+        alert('Por favor, insira um email válido');
+        return;
+      }
+
+      console.log('Enviando requisição para criar usuário...');
 
       const response = await fetch('/api/users', {
         method: 'POST',
@@ -104,7 +115,17 @@ const UsersManagementPage = () => {
         }),
       });
 
-      const result = await response.json();
+      console.log('Resposta recebida:', response.status, response.statusText);
+
+      let result;
+      try {
+        result = await response.json();
+        console.log('Resultado:', result);
+      } catch (jsonError) {
+        console.error('Erro ao fazer parse do JSON:', jsonError);
+        alert('Erro na resposta do servidor');
+        return;
+      }
 
       if (response.ok) {
         alert('Usuário criado com sucesso!');
@@ -118,11 +139,12 @@ const UsersManagementPage = () => {
           password: ""
         });
       } else {
+        console.error('Erro na resposta:', result);
         alert(`Erro ao criar usuário: ${result.error || 'Erro desconhecido'}`);
       }
     } catch (error) {
-      console.error('Erro ao criar usuário:', error);
-      alert('Erro ao criar usuário. Tente novamente.');
+      console.error('Erro detalhado ao criar usuário:', error);
+      alert(`Erro ao criar usuário: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     }
   };
 
