@@ -6,12 +6,11 @@ import { users, sessions } from '../../../server/src/db/schema';
 
 neonConfig.webSocketConstructor = ws;
 
-const databaseUrl = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_6g7ELJivyZMF@ep-morning-butterfly-ael3z2dl.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require";
+// Use environment variable or fallback to Neon database
+const databaseUrl = process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL || "postgresql://neondb_owner:npg_6g7ELJivyZMF@ep-morning-butterfly-ael3z2dl.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require";
 
 if (!databaseUrl) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
-  );
+  console.warn("DATABASE_URL not found, using fallback connection");
 }
 
 const pool = new Pool({ connectionString: databaseUrl });

@@ -35,30 +35,29 @@ export function useAuth() {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
-
-  // Use React Query to fetch user data only after component is mounted
-  const { data: user, isLoading, error } = useQuery({
-    queryKey: ['/api/auth/user'],
-    queryFn: async () => {
+    
+    // Simple fetch without React Query for now
+    const fetchUser = async () => {
       try {
-        const response = await authFetch('/api/auth/user');
-        return await response.json();
-      } catch (error) {
-        if (error instanceof Error && isUnauthorizedError(error)) {
-          // User is not authenticated, return null
-          return null;
+        const response = await fetch('/api/auth/user');
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
         }
-        throw error;
+      } catch (error) {
+        console.log('User not authenticated');
+      } finally {
+        setIsLoading(false);
       }
-    },
-    retry: false,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    enabled: mounted, // Only run query after component is mounted
-  });
+    };
+
+    fetchUser();
+  }, []);
 
   // Show loading state during SSR
   if (!mounted) {
@@ -87,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={{ 
-      user: user || null, 
+      user, 
       login, 
       logout, 
       isLoading,

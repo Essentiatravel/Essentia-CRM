@@ -8,7 +8,7 @@ expertMode = true
 integrations = ["javascript_log_in_with_replit:1.0.0", "javascript_database:1.0.0"]
 
 [workflows]
-runButton = "TourGuide Full Stack"
+runButton = "TourGuide Frontend Dev"
 
 [[workflows.workflow]]
 name = "Project"
@@ -43,6 +43,15 @@ args = "npm run dev:web"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev:server"
+
+[[workflows.workflow]]
+name = "TourGuide Frontend Dev"
+author = 44106532
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd apps/web && npm run dev -- --port 5000 --hostname 0.0.0.0"
 
 [[ports]]
 localPort = 5000
