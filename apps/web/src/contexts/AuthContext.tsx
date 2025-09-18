@@ -1,8 +1,8 @@
 "use client";
 
 // Replit Auth integration - Updated AuthContext
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { authFetch, isUnauthorizedError } from '../lib/authUtils';
 
 interface User {
@@ -25,13 +25,21 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
+  }
+  return context;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
-  
+
   useEffect(() => {
     setMounted(true);
   }, []);
-  
+
   // Use React Query to fetch user data only after component is mounted
   const { data: user, isLoading, error } = useQuery({
     queryKey: ['/api/auth/user'],
@@ -51,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     staleTime: 1000 * 60 * 5, // 5 minutes
     enabled: mounted, // Only run query after component is mounted
   });
-  
+
   // Show loading state during SSR
   if (!mounted) {
     return (
@@ -88,12 +96,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
-  }
-  return context;
 }

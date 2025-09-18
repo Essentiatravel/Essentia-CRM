@@ -6,17 +6,15 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "turbo dev",
     "build": "turbo build",
-    "start": "turbo -F web start",
-    "check-types": "turbo check-types",
-    "dev:native": "turbo -F native dev",
+    "dev": "turbo dev",
     "dev:web": "turbo -F web dev",
     "dev:server": "turbo -F server dev",
-    "db:push": "turbo -F server db:push",
-    "db:studio": "turbo -F server db:studio",
-    "db:generate": "turbo -F server db:generate",
-    "db:migrate": "turbo -F server db:migrate"
+    "lint": "turbo lint",
+    "type-check": "turbo type-check",
+    "db:push": "cd apps/server && npm run db:push",
+    "db:studio": "cd apps/server && npm run db:studio",
+    "db:seed": "cd apps/server && npm run db:seed"
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^1.0.117",
