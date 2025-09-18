@@ -2,11 +2,27 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { getUserByEmail, createUser, getAllUsers } from "@/lib/database";
 
 export async function GET() {
   try {
-    const allUsers = await db.select().from(users).orderBy(users.createdAt);
-    return NextResponse.json(allUsers);
+    const allUsers = await getAllUsers();
+    
+    // Transformar dados para o formato esperado pelo frontend
+    const formattedUsers = allUsers.map(user => {
+      const [firstName, ...lastNameParts] = user.nome.split(' ');
+      return {
+        id: user.id,
+        email: user.email,
+        firstName: firstName,
+        lastName: lastNameParts.join(' ') || '',
+        userType: user.userType,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      };
+    });
+    
+    return NextResponse.json(formattedUsers);
   } catch (error) {
     console.error('Erro ao buscar usuários:', error);
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
@@ -15,11 +31,11 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { nome, email, userType, telefone, endereco, cpf, senha } = await request.json();
+    const { firstName, lastName, email, userType, password } = await request.json();
 
-    if (!nome || !email || !userType || !senha) {
+    if (!firstName || !lastName || !email || !userType) {
       return NextResponse.json(
-        { error: 'Nome, email, tipo de usuário e senha são obrigatórios' },
+        { error: 'Nome, sobrenome, email e tipo de usuário são obrigatórios' },
         { status: 400 }
       );
     }
@@ -33,14 +49,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Combinar firstName e lastName para criar nome completo
+    const nomeCompleto = `${firstName} ${lastName}`;
+    
+    // Gerar senha padrão se não fornecida
+    const senhaUsuario = password || '123456';
+
     const newUser = await createUser({
-      nome,
+      nome: nomeCompleto,
       email,
       userType,
-      telefone,
-      endereco,
-      cpf,
-      senha
+      senha: senhaUsuario
     });
 
     // Remove a senha e hash do retorno
@@ -48,7 +67,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      user: userWithoutPassword
+      user: {
+        ...userWithoutPassword,
+        firstName,
+        lastName,
+        createdAt: userWithoutPassword.createdAt || new Date().toISOString(),
+        updatedAt: userWithoutPassword.updatedAt || new Date().toISOString()
+      }
     });
 
   } catch (error) {

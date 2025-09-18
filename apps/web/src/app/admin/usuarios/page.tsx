@@ -85,8 +85,8 @@ const UsersManagementPage = () => {
   const handleCreateUser = async () => {
     try {
       // Validação dos campos obrigatórios
-      if (!newUser.email || !newUser.firstName || !newUser.lastName || !newUser.userType) {
-        alert('Por favor, preencha todos os campos obrigatórios');
+      if (!newUser.email || !newUser.firstName || !newUser.lastName || !newUser.userType || !newUser.password) {
+        alert('Por favor, preencha todos os campos obrigatórios incluindo a senha');
         return;
       }
 
@@ -100,6 +100,7 @@ const UsersManagementPage = () => {
           firstName: newUser.firstName,
           lastName: newUser.lastName,
           userType: newUser.userType,
+          password: newUser.password,
         }),
       });
 
