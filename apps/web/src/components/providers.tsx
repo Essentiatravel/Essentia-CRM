@@ -1,3 +1,4 @@
+
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -6,7 +7,6 @@ import { ThemeProvider } from "./theme-provider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { Toaster } from "./ui/sonner";
-
 
 export default function Providers({
   children
@@ -23,19 +23,19 @@ export default function Providers({
   }));
 
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
-      <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+      >
         <AuthProvider>
           {children}
         </AuthProvider>
-      </QueryClientProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
-      <Toaster richColors />
-    </ThemeProvider>
+        <ReactQueryDevtools initialIsOpen={false} />
+        <Toaster richColors />
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }

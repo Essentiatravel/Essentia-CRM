@@ -8,24 +8,10 @@ import ExperienceTypes from "@/components/experience-types";
 import Destinations from "@/components/destinations";
 import Differentials from "@/components/differentials";
 import Footer from "@/components/footer";
-import AdminAccessButton from "@/components/admin-access-button";
 
 export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
-
-  useEffect(() => {
-    if (!loading && user) {
-      // Redirecionar usuários logados para seus respectivos dashboards
-      if (user.tipo === 'admin') {
-        router.push('/admin');
-      } else if (user.tipo === 'guia') {
-        router.push('/guia');
-      } else if (user.tipo === 'cliente') {
-        router.push('/cliente');
-      }
-    }
-  }, [user, loading, router]);
 
   if (loading) {
     return (
@@ -45,7 +31,6 @@ export default function Home() {
       <Destinations />
       <Differentials />
       <Footer />
-      <AdminAccessButton />
     </main>
   );
 }

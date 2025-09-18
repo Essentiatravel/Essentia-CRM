@@ -1,9 +1,6 @@
 "use client";
 
-// Replit Auth integration - Updated AuthContext
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { authFetch, isUnauthorizedError } from '../lib/authUtils';
 
 interface User {
   id: string;
@@ -19,7 +16,7 @@ interface AuthContextType {
   user: User | null;
   login: () => void;
   logout: () => void;
-  isLoading: boolean;
+  loading: boolean;
   isAuthenticated: boolean;
 }
 
@@ -34,14 +31,10 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setMounted(true);
-    
-    // Simple fetch without React Query for now
     const fetchUser = async () => {
       try {
         const response = await fetch('/api/auth/user');
@@ -52,35 +45,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         console.log('User not authenticated');
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
 
     fetchUser();
   }, []);
 
-  // Show loading state during SSR
-  if (!mounted) {
-    return (
-      <AuthContext.Provider value={{ 
-        user: null, 
-        login: () => {}, 
-        logout: () => {}, 
-        isLoading: true,
-        isAuthenticated: false 
-      }}>
-        {children}
-      </AuthContext.Provider>
-    );
-  }
-
   const login = () => {
-    // Redirect to Replit Auth login endpoint
     window.location.href = '/api/login';
   };
 
   const logout = () => {
-    // Redirect to Replit Auth logout endpoint
     window.location.href = '/api/logout';
   };
 
@@ -89,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user, 
       login, 
       logout, 
-      isLoading,
+      loading,
       isAuthenticated: !!user 
     }}>
       {children}
