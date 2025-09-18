@@ -13,7 +13,6 @@ export interface User {
   endereco?: string;
   data_nascimento?: string;
   cpf?: string;
-  status: 'ativo' | 'inativo';
   senha?: string;
   password_hash?: string;
   createdAt?: Date;
@@ -45,9 +44,9 @@ export async function createUser(userData: {
     
     const result = await sql`
       INSERT INTO users (
-        id, email, nome, "userType", password_hash, telefone, endereco, cpf, status, "createdAt", "updatedAt"
+        id, email, nome, "userType", password_hash, telefone, endereco, cpf, "createdAt", "updatedAt"
       ) VALUES (
-        ${id}, ${email}, ${nome}, ${userType}, ${password_hash}, ${telefone || null}, ${endereco || null}, ${cpf || null}, 'ativo', NOW(), NOW()
+        ${id}, ${email}, ${nome}, ${userType}, ${password_hash}, ${telefone || null}, ${endereco || null}, ${cpf || null}, NOW(), NOW()
       ) RETURNING *
     `;
     
@@ -61,7 +60,7 @@ export async function createUser(userData: {
 
 export async function getUserByEmail(email: string): Promise<User | null> {
   const result = await sql`
-    SELECT * FROM users WHERE email = ${email} AND status = 'ativo'
+    SELECT * FROM users WHERE email = ${email}
   `;
   
   if (result.length === 0) {
@@ -91,20 +90,12 @@ export async function validateUserPassword(email: string, password: string): Pro
 
 export async function getAllUsers(): Promise<User[]> {
   const result = await sql`
-    SELECT id, email, nome, "userType", telefone, endereco, cpf, status, "createdAt", "updatedAt"
+    SELECT id, email, nome, "userType", telefone, endereco, cpf, "createdAt", "updatedAt"
     FROM users 
     ORDER BY "createdAt" DESC
   `;
   
   return result as User[];
-}
-
-export async function updateUserStatus(id: string, status: 'ativo' | 'inativo'): Promise<void> {
-  await sql`
-    UPDATE users 
-    SET status = ${status}, "updatedAt" = NOW()
-    WHERE id = ${id}
-  `;
 }
 
 export async function deleteUser(id: string): Promise<void> {
@@ -120,8 +111,7 @@ export async function getUserStats() {
       COUNT(CASE WHEN "userType" = 'admin' THEN 1 END) as admins,
       COUNT(CASE WHEN "userType" = 'guia' THEN 1 END) as guias,
       COUNT(CASE WHEN "userType" = 'cliente' THEN 1 END) as clientes
-    FROM users 
-    WHERE status = 'ativo'
+    FROM users
   `;
   
   return {

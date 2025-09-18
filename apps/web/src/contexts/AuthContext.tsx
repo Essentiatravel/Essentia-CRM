@@ -11,7 +11,6 @@ interface User {
   endereco?: string;
   data_nascimento?: string;
   cpf?: string;
-  status: 'ativo' | 'inativo';
   createdAt?: Date;
   updatedAt?: Date;
 }

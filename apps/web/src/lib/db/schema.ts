@@ -16,7 +16,6 @@ export const users = pgTable("users", {
   endereco: text('endereco'),
   data_nascimento: timestamp('data_nascimento'),
   cpf: text('cpf'),
-  status: text('status').default('ativo'),
   senha: text('senha'),
   password_hash: text('password_hash')
 });
