@@ -5,6 +5,6 @@ export default defineConfig({
   out: "./src/db/migrations",
   dialect: "sqlite",
   dbCredentials: {
-    url: process.env.DATABASE_URL || "file:../../tmp/turguide.db",
+    url: "file:./local.db",
   },
 });
