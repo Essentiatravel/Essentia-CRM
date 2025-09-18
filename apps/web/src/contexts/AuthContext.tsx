@@ -8,6 +8,7 @@ interface User {
   firstName: string | null;
   lastName: string | null;
   profileImageUrl: string | null;
+  userType: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
 }
@@ -37,13 +38,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch('/api/auth/user');
+        // Primeiro tenta pegar do servidor
+        const response = await fetch('/api/auth/me');
         if (response.ok) {
-          const userData = await response.json();
+          const { user: userData } = await response.json();
+          if (userData) {
+            setUser(userData);
+            setLoading(false);
+            return;
+          }
+        }
+
+        // Se não conseguir do servidor, tenta localStorage (para demo)
+        const localUser = localStorage.getItem('auth-user');
+        if (localUser) {
+          const userData = JSON.parse(localUser);
           setUser(userData);
         }
       } catch (error) {
         console.log('User not authenticated');
+
+        // Fallback para localStorage
+        try {
+          const localUser = localStorage.getItem('auth-user');
+          if (localUser) {
+            const userData = JSON.parse(localUser);
+            setUser(userData);
+          }
+        } catch (e) {
+          console.log('No local user data');
+        }
       } finally {
         setLoading(false);
       }
@@ -53,11 +77,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = () => {
-    window.location.href = '/api/login';
+    const currentPath = window.location.pathname;
+    window.location.href = `/api/auth/login?redirect=${encodeURIComponent(currentPath)}`;
   };
 
-  const logout = () => {
-    window.location.href = '/api/logout';
+  const logout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      localStorage.removeItem('auth-user');
+      setUser(null);
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Logout error:', error);
+      localStorage.removeItem('auth-user');
+      setUser(null);
+      window.location.href = '/';
+    }
   };
 
   return (

@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(npx drizzle-kit push:*)",
+      "Bash(curl:*)",
+      "Bash(echo \"REPL_ID: $REPL_ID\")",
+      "Bash(echo:*)",
+      "Bash(env)",
+      "Bash(/dev/null)",
+      "Bash(npx drizzle-kit studio:*)",
+      "Bash(npx tsx:*)",
+      "Bash(pkill:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

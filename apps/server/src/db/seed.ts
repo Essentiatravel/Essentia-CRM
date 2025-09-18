@@ -146,7 +146,7 @@ const guiasData = [
     percentualComissao: 35,
     biografia: "Guia especializado em história romana com 10 anos de experiência",
     status: "ativo",
-    dataRegistro: "2024-03-15",
+    dataRegistro: new Date("2024-03-15"),
   },
   {
     id: "2",
@@ -162,7 +162,7 @@ const guiasData = [
     percentualComissao: 30,
     biografia: "Especialista em trilhas e aventuras na natureza italiana",
     status: "ativo",
-    dataRegistro: "2024-05-22",
+    dataRegistro: new Date("2024-05-22"),
   },
   {
     id: "3",
@@ -178,7 +178,7 @@ const guiasData = [
     percentualComissao: 32,
     biografia: "Historiador da arte especializado no período renascentista",
     status: "ativo",
-    dataRegistro: "2024-01-08",
+    dataRegistro: new Date("2024-01-08"),
   },
   {
     id: "4",
@@ -194,7 +194,7 @@ const guiasData = [
     percentualComissao: 28,
     biografia: "Sommelier e chef especializada na culinária toscana tradicional",
     status: "ativo",
-    dataRegistro: "2024-07-12",
+    dataRegistro: new Date("2024-07-12"),
   }
 ];
 

@@ -213,6 +213,7 @@ const Sidebar: React.FC = () => (
             { icon: Home, label: "Dashboard", active: true, href: "/admin" },
             { icon: Calendar, label: "Agendamentos", href: "/admin/agendamentos" },
             { icon: CalendarDays, label: "Calendário Global", href: "/admin/calendario" },
+            { icon: User, label: "Usuários", href: "/admin/usuarios" },
             { icon: Users, label: "Guias", href: "/admin/guias" },
             { icon: Heart, label: "Clientes", href: "/admin/clientes" },
             { icon: MapPinIcon, label: "Passeios", href: "/admin/passeios" },
