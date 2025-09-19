@@ -36,10 +36,10 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     console.log('Recebendo requisição de criação de usuário...');
-    
+
     const body = await request.json();
     console.log('Dados recebidos:', { ...body, password: '[HIDDEN]' });
-    
+
     const { firstName, lastName, email, userType, password } = body;
 
     // Validação mais robusta
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('Verificando se email já existe...');
-    
+
     // Verificar se o email já existe
     const existingUser = await getUserByEmail(email);
     if (existingUser) {
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     // Combinar firstName e lastName para criar nome completo
     const nomeCompleto = `${firstName} ${lastName}`;
-    
+
     console.log('Criando usuário...');
 
     const newUser = await createUser({
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Erro detalhado ao criar usuário na API:', error);
-    
+
     // Retornar erro mais específico quando possível
     if (error instanceof Error) {
       return NextResponse.json(
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-    
+
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
@@ -117,90 +117,23 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function PUT(request: NextRequest) {
+export async function PUT(request: Request) {
   try {
-    console.log('Recebendo requisição de atualização de usuário...');
-
-    const body = await request.json();
-    console.log('Dados recebidos:', { ...body, password: body.password ? '[HIDDEN]' : undefined });
-
-    const { id, firstName, lastName, email, userType, password, telefone, endereco, cpf, status } = body;
+    const { id, ...userData } = await request.json();
 
     if (!id) {
-      return NextResponse.json(
-        { error: 'ID do usuário é obrigatório' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'ID do usuário é obrigatório' }, { status: 400 });
     }
 
-    // Preparar dados de atualização
-    const updateData: any = {};
+    const result = await updateUser(id, userData);
 
-    if (firstName && lastName) {
-      updateData.nome = `${firstName} ${lastName}`;
+    if (!result) {
+      return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
     }
 
-    if (email) updateData.email = email;
-    if (userType) updateData.userType = userType;
-    if (password) updateData.senha = password;
-    if (telefone !== undefined) updateData.telefone = telefone;
-    if (endereco !== undefined) updateData.endereco = endereco;
-    if (cpf !== undefined) updateData.cpf = cpf;
-    if (status !== undefined) updateData.status = status;
-
-    // Validar tipo de usuário se fornecido
-    if (userType && !['admin', 'guia', 'cliente'].includes(userType)) {
-      return NextResponse.json(
-        { error: 'Tipo de usuário inválido' },
-        { status: 400 }
-      );
-    }
-
-    // Verificar se o email já existe em outro usuário
-    if (email) {
-      const existingUser = await getUserByEmail(email);
-      if (existingUser && existingUser.id !== id) {
-        return NextResponse.json(
-          { error: 'Email já está em uso por outro usuário' },
-          { status: 400 }
-        );
-      }
-    }
-
-    console.log('Atualizando usuário...');
-
-    const updatedUser = await updateUser(id, updateData);
-
-    console.log('Usuário atualizado com sucesso');
-
-    // Remove a senha e hash do retorno
-    const { senha: _, password_hash: __, ...userWithoutPassword } = updatedUser;
-
-    // Separar nome em firstName e lastName para retorno
-    const [firstName_ret, ...lastNameParts] = (updatedUser.nome || '').split(' ');
-
-    return NextResponse.json({
-      success: true,
-      user: {
-        ...userWithoutPassword,
-        firstName: firstName_ret || '',
-        lastName: lastNameParts.join(' ') || '',
-        userType: updatedUser.userType || updatedUser.user_type,
-        createdAt: userWithoutPassword.createdAt || updatedUser.created_at,
-        updatedAt: userWithoutPassword.updatedAt || updatedUser.updated_at
-      }
-    });
-
+    return NextResponse.json(result);
   } catch (error) {
-    console.error('Erro detalhado ao atualizar usuário na API:', error);
-
-    if (error instanceof Error) {
-      return NextResponse.json(
-        { error: `Erro ao atualizar usuário: ${error.message}` },
-        { status: 500 }
-      );
-    }
-
+    console.error('Erro ao atualizar usuário:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

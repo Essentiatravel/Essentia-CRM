@@ -1,4 +1,3 @@
-
 import { neon } from '@neondatabase/serverless';
 import bcrypt from 'bcrypt';
 
@@ -30,18 +29,18 @@ export async function createUser(userData: {
 }): Promise<User> {
   try {
     console.log('Criando usuário com dados:', { ...userData, senha: '[HIDDEN]' });
-    
+
     const { email, nome, userType, senha, telefone, endereco, cpf } = userData;
-    
+
     // Gerar hash da senha
     const saltRounds = 10;
     const password_hash = await bcrypt.hash(senha, saltRounds);
-    
+
     // Gerar ID único
     const id = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     console.log('Executando query de inserção...');
-    
+
     const result = await sql`
       INSERT INTO users (
         id, email, nome, "userType", password_hash, telefone, endereco, cpf, "createdAt", "updatedAt"
@@ -49,7 +48,7 @@ export async function createUser(userData: {
         ${id}, ${email}, ${nome}, ${userType}, ${password_hash}, ${telefone || null}, ${endereco || null}, ${cpf || null}, NOW(), NOW()
       ) RETURNING *
     `;
-    
+
     console.log('Usuário criado com sucesso:', result[0]);
     return result[0] as User;
   } catch (error) {
@@ -62,27 +61,27 @@ export async function getUserByEmail(email: string): Promise<User | null> {
   const result = await sql`
     SELECT * FROM users WHERE email = ${email}
   `;
-  
+
   if (result.length === 0) {
     return null;
   }
-  
+
   return result[0] as User;
 }
 
 export async function validateUserPassword(email: string, password: string): Promise<User | null> {
   const user = await getUserByEmail(email);
-  
+
   if (!user || !user.password_hash) {
     return null;
   }
-  
+
   const isValid = await bcrypt.compare(password, user.password_hash);
-  
+
   if (!isValid) {
     return null;
   }
-  
+
   // Remover hash da senha do retorno
   const { password_hash, ...userWithoutHash } = user;
   return userWithoutHash as User;
@@ -94,8 +93,24 @@ export async function getAllUsers(): Promise<User[]> {
     FROM users 
     ORDER BY "createdAt" DESC
   `;
-  
+
   return result as User[];
+}
+
+export async function updateUser(id: string, userData: Partial<User>) {
+  try {
+    const result = await sql`
+      UPDATE users
+      SET ${sql(userData)}
+      WHERE id = ${id}
+      RETURNING *
+    `;
+    console.log('Usuário atualizado:', result);
+    return result[0];
+  } catch (error) {
+    console.error('Erro ao atualizar usuário:', error);
+    throw error;
+  }
 }
 
 export async function deleteUser(id: string): Promise<void> {
@@ -113,7 +128,7 @@ export async function getUserStats() {
       COUNT(CASE WHEN "userType" = 'cliente' THEN 1 END) as clientes
     FROM users
   `;
-  
+
   return {
     totalUsers: parseInt(stats[0].total),
     totalAdmins: parseInt(stats[0].admins),
