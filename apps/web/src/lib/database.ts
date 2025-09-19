@@ -97,16 +97,45 @@ export async function getAllUsers(): Promise<User[]> {
   return result as User[];
 }
 
-export async function updateUser(id: string, userData: Partial<User>) {
+export async function updateUser(id: string, userData: Partial<User>): Promise<User | null> {
   try {
+    const { firstName, lastName, email, userType, password, ...otherData } = userData as any;
+    
+    // Construir objeto de atualização
+    const updateData: any = { ...otherData };
+    
+    if (firstName && lastName) {
+      updateData.nome = `${firstName} ${lastName}`;
+    }
+    
+    if (email) updateData.email = email;
+    if (userType) updateData.userType = userType;
+    
+    // Se uma nova senha foi fornecida, gerar hash
+    if (password) {
+      const saltRounds = 10;
+      updateData.password_hash = await bcrypt.hash(password, saltRounds);
+    }
+    
+    updateData.updatedAt = new Date();
+    
     const result = await sql`
-      UPDATE users
-      SET ${sql(userData)}
+      UPDATE users 
+      SET 
+        nome = COALESCE(${updateData.nome}, nome),
+        email = COALESCE(${updateData.email}, email),
+        "userType" = COALESCE(${updateData.userType}, "userType"),
+        password_hash = COALESCE(${updateData.password_hash}, password_hash),
+        telefone = COALESCE(${updateData.telefone}, telefone),
+        endereco = COALESCE(${updateData.endereco}, endereco),
+        cpf = COALESCE(${updateData.cpf}, cpf),
+        "updatedAt" = ${updateData.updatedAt}
       WHERE id = ${id}
-      RETURNING *
+      RETURNING id, email, nome, "userType", telefone, endereco, cpf, "createdAt", "updatedAt"
     `;
-    console.log('Usuário atualizado:', result);
-    return result[0];
+    
+    console.log('Usuário atualizado:', result[0]);
+    return result[0] as User || null;
   } catch (error) {
     console.error('Erro ao atualizar usuário:', error);
     throw error;
