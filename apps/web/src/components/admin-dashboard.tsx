@@ -190,7 +190,7 @@ const MetricCard: React.FC<{ metric: MetricCard }> = ({ metric }) => (
 );
 
 // Componente da barra lateral
-const Sidebar: React.FC<{ onLogout: () => void }> = ({ onLogout }) => (
+const Sidebar: React.FC<{ onLogout: () => void; user: any }> = ({ onLogout, user }) => (
   <div className="hidden lg:block w-64 bg-white border-r border-gray-200 h-screen fixed left-0 top-0">
     <div className="p-6">
       {/* Logo */}
@@ -240,11 +240,13 @@ const Sidebar: React.FC<{ onLogout: () => void }> = ({ onLogout }) => (
       <div className="absolute bottom-6 left-6 right-6">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-            <span className="text-sm font-medium text-gray-700">E</span>
+            <span className="text-sm font-medium text-gray-700">
+              {user?.nome?.charAt(0) || 'U'}
+            </span>
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-900">ELISSON UZUAL</p>
-            <p className="text-xs text-gray-600">uzualelisson@gmail.com</p>
+            <p className="text-sm font-medium text-gray-900">{user?.nome || 'Usuário'}</p>
+            <p className="text-xs text-gray-600">{user?.email || 'email@exemplo.com'}</p>
           </div>
         </div>
         <Button variant="outline" size="sm" className="w-full" onClick={onLogout}>
@@ -258,7 +260,7 @@ const Sidebar: React.FC<{ onLogout: () => void }> = ({ onLogout }) => (
 
 // Componente principal do dashboard
 export const AdminDashboard: React.FC = () => {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const [isAddTourModalOpen, setIsAddTourModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [dashboardStats, setDashboardStats] = useState({
@@ -319,10 +321,14 @@ export const AdminDashboard: React.FC = () => {
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Navegação mobile */}
-      <AdminMobileNav userName="ELISSON UZUAL" userEmail="uzualelisson@gmail.com" onLogout={logout} />
-      
+      <AdminMobileNav
+        userName={user?.nome || 'Usuário'}
+        userEmail={user?.email || 'email@exemplo.com'}
+        onLogout={logout}
+      />
+
       {/* Barra lateral */}
-      <Sidebar onLogout={logout} />
+      <Sidebar onLogout={logout} user={user} />
 
       {/* Conteúdo principal */}
       <div className="flex-1 lg:ml-64 ml-0">
@@ -334,7 +340,7 @@ export const AdminDashboard: React.FC = () => {
                 Dashboard Administrativo
               </h1>
               <p className="text-gray-600 mt-2">
-                Bem-vindo, ELISSON UZUAL. Aqui está um resumo do seu negócio.
+                Bem-vindo, {user?.nome || 'Usuário'}. Aqui está um resumo do seu negócio.
               </p>
             </div>
             <Button 

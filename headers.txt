@@ -1,0 +1,9 @@
+HTTP/1.1 200 OK
+X-Frame-Options: SAMEORIGIN
+content-type: application/json
+set-cookie: auth-session=%7B%22userId%22%3A%22user_1758214813942_gzu5r6m5q%22%2C%22user%22%3A%7B%22id%22%3A%22user_1758214813942_gzu5r6m5q%22%2C%22email%22%3A%22admin%40test.com%22%2C%22first_name%22%3Anull%2C%22last_name%22%3Anull%2C%22profile_image_url%22%3Anull%2C%22created_at%22%3A%222025-09-18T17%3A00%3A13.974Z%22%2C%22updated_at%22%3A%222025-09-18T17%3A00%3A13.974Z%22%2C%22user_type%22%3A%22admin%22%2C%22nome%22%3A%22Admin%20Test%22%2C%22telefone%22%3Anull%2C%22endereco%22%3Anull%2C%22cpf%22%3Anull%2C%22data_nascimento%22%3Anull%2C%22senha%22%3Anull%2C%22status%22%3A%22ativo%22%7D%2C%22authenticated%22%3Atrue%2C%22expires_at%22%3A1758873645%7D; Path=/; Expires=Fri, 26 Sep 2025 08:00:45 GMT; Max-Age=604800; HttpOnly; SameSite=lax
+Date: Fri, 19 Sep 2025 08:00:45 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+Transfer-Encoding: chunked
+

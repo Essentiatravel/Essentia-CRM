@@ -76,8 +76,8 @@ const NovaTarefaModal: React.FC<NovaTarefaModalProps> = ({
     if (editingTarefa) {
       setFormData({
         passeioId: editingTarefa.passeio_id,
-        clienteId: editingTarefa.cliente_id,
-        guiaId: editingTarefa.guia_id,
+        clienteId: editingTarefa.cliente_id || null,
+        guiaId: editingTarefa.guia_id || null,
         data: editingTarefa.data_passeio ? editingTarefa.data_passeio.replace('T', ' ').slice(0, 16) : "",
         numeroPessoas: editingTarefa.numero_pessoas,
         observacoes: editingTarefa.observacoes || "",
@@ -102,8 +102,14 @@ const NovaTarefaModal: React.FC<NovaTarefaModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.passeioId && formData.clienteId && formData.data) {
-      onSubmit(formData);
+    if (formData.passeioId && formData.data) {
+      // Converter "none" para null
+      const submitData = {
+        ...formData,
+        clienteId: formData.clienteId === "none" ? null : formData.clienteId,
+        guiaId: formData.guiaId === "none" ? null : formData.guiaId
+      };
+      onSubmit(submitData);
       onClose();
       // Reset form
       setFormData({
@@ -166,16 +172,19 @@ const NovaTarefaModal: React.FC<NovaTarefaModalProps> = ({
               <div className="space-y-2">
                 <Label htmlFor="guia" className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
-                  Guia *
+                  Guia (Opcional)
                 </Label>
                 <Select
-                  value={formData.guiaId || ""}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, guiaId: value }))}
+                  value={formData.guiaId || "none"}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, guiaId: value === "none" ? null : value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione o guia" />
+                    <SelectValue placeholder="Selecione um guia (opcional)" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">
+                      <span className="text-gray-500">Nenhum guia selecionado</span>
+                    </SelectItem>
                     {guias.map((guia) => (
                       <SelectItem key={guia.id} value={guia.id}>
                         <div className="flex flex-col">
@@ -224,16 +233,19 @@ const NovaTarefaModal: React.FC<NovaTarefaModalProps> = ({
               <div className="space-y-2">
                 <Label htmlFor="cliente" className="flex items-center gap-2">
                   <User className="h-4 w-4" />
-                  Cliente *
+                  Cliente (Opcional)
                 </Label>
                 <Select
-                  value={formData.clienteId || ""}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, clienteId: value }))}
+                  value={formData.clienteId || "none"}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, clienteId: value === "none" ? null : value })))
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione o cliente" />
+                    <SelectValue placeholder="Selecione um cliente (opcional)" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">
+                      <span className="text-gray-500">Nenhum cliente selecionado</span>
+                    </SelectItem>
                     {clientes.map((cliente) => (
                       <SelectItem key={cliente.id} value={cliente.id}>
                         <div className="flex flex-col">
@@ -296,10 +308,10 @@ const NovaTarefaModal: React.FC<NovaTarefaModalProps> = ({
             <Button type="button" variant="outline" onClick={onClose}>
               Cancelar
             </Button>
-            <Button 
+            <Button
               type="submit"
               className="bg-blue-600 hover:bg-blue-700 text-white"
-              disabled={!formData.passeioId || !formData.clienteId || !formData.data}
+              disabled={!formData.passeioId || !formData.data}
             >
               {editingTarefa ? 'Salvar Alterações' : 'Criar Tarefa'}
             </Button>

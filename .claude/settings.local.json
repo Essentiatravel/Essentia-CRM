@@ -10,7 +10,12 @@
       "Bash(/dev/null)",
       "Bash(npx drizzle-kit studio:*)",
       "Bash(npx tsx:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(printf \"y\\n\")",
+      "Bash(lsof:*)",
+      "Bash(PORT=3000 npm run dev)",
+      "Bash(PORT=3000 npm run dev --prefix apps/web)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

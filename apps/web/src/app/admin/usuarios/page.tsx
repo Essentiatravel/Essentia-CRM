@@ -55,7 +55,17 @@ const UsersManagementPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<Usuario | null>(null);
   const [newUser, setNewUser] = useState({
+    email: "",
+    firstName: "",
+    lastName: "",
+    userType: "cliente" as 'admin' | 'guia' | 'cliente',
+    password: ""
+  });
+  const [editUser, setEditUser] = useState({
+    id: "",
     email: "",
     firstName: "",
     lastName: "",
@@ -85,7 +95,7 @@ const UsersManagementPage = () => {
   const handleCreateUser = async () => {
     try {
       console.log('Iniciando criação de usuário...', { ...newUser, password: '[HIDDEN]' });
-      
+
       // Validação dos campos obrigatórios
       if (!newUser.email || !newUser.firstName || !newUser.lastName || !newUser.userType || !newUser.password) {
         alert('Por favor, preencha todos os campos obrigatórios incluindo a senha');
@@ -148,6 +158,131 @@ const UsersManagementPage = () => {
     }
   };
 
+  const handleEditUser = (user: Usuario) => {
+    setEditingUser(user);
+    setEditUser({
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      userType: user.userType,
+      password: ""
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateUser = async () => {
+    try {
+      console.log('Iniciando atualização de usuário...', { ...editUser, password: editUser.password ? '[HIDDEN]' : '[NOT_PROVIDED]' });
+
+      // Validação dos campos obrigatórios (exceto senha que é opcional)
+      if (!editUser.email || !editUser.firstName || !editUser.lastName || !editUser.userType) {
+        alert('Por favor, preencha todos os campos obrigatórios');
+        return;
+      }
+
+      // Validação de email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(editUser.email)) {
+        alert('Por favor, insira um email válido');
+        return;
+      }
+
+      console.log('Enviando requisição para atualizar usuário...');
+
+      const updateData: any = {
+        id: editUser.id,
+        email: editUser.email,
+        firstName: editUser.firstName,
+        lastName: editUser.lastName,
+        userType: editUser.userType,
+      };
+
+      // Só incluir senha se foi fornecida
+      if (editUser.password.trim()) {
+        updateData.password = editUser.password;
+      }
+
+      const response = await fetch('/api/users', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      console.log('Resposta recebida:', response.status, response.statusText);
+
+      let result;
+      try {
+        result = await response.json();
+        console.log('Resultado:', result);
+      } catch (jsonError) {
+        console.error('Erro ao fazer parse do JSON:', jsonError);
+        alert('Erro na resposta do servidor');
+        return;
+      }
+
+      if (response.ok) {
+        alert('Usuário atualizado com sucesso!');
+        await fetchUsers();
+        setIsEditModalOpen(false);
+        setEditingUser(null);
+        setEditUser({
+          id: "",
+          email: "",
+          firstName: "",
+          lastName: "",
+          userType: "cliente",
+          password: ""
+        });
+      } else {
+        console.error('Erro na resposta:', result);
+        alert(`Erro ao atualizar usuário: ${result.error || 'Erro desconhecido'}`);
+      }
+    } catch (error) {
+      console.error('Erro detalhado ao atualizar usuário:', error);
+      alert(`Erro ao atualizar usuário: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+    }
+  };
+
+  const handleDeleteUser = async (user: Usuario) => {
+    if (!confirm(`Tem certeza que deseja excluir o usuário ${user.firstName} ${user.lastName}?`)) {
+      return;
+    }
+
+    try {
+      console.log('Iniciando exclusão de usuário:', user.id);
+
+      const response = await fetch(`/api/users?id=${user.id}`, {
+        method: 'DELETE',
+      });
+
+      console.log('Resposta recebida:', response.status, response.statusText);
+
+      let result;
+      try {
+        result = await response.json();
+        console.log('Resultado:', result);
+      } catch (jsonError) {
+        console.error('Erro ao fazer parse do JSON:', jsonError);
+        alert('Erro na resposta do servidor');
+        return;
+      }
+
+      if (response.ok) {
+        alert('Usuário excluído com sucesso!');
+        await fetchUsers();
+      } else {
+        console.error('Erro na resposta:', result);
+        alert(`Erro ao excluir usuário: ${result.error || 'Erro desconhecido'}`);
+      }
+    } catch (error) {
+      console.error('Erro detalhado ao excluir usuário:', error);
+      alert(`Erro ao excluir usuário: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+    }
+  };
+
   const getUserTypeIcon = (type: string) => {
     switch (type) {
       case 'admin':
@@ -193,7 +328,7 @@ const UsersManagementPage = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 lg:p-8 space-y-6 overflow-auto h-full">
       {/* Cabeçalho */}
       <div className="flex justify-between items-start">
         <div>
@@ -278,6 +413,82 @@ const UsersManagementPage = () => {
                 </Button>
                 <Button onClick={handleCreateUser}>
                   Criar Usuário
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de Edição */}
+        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Editar Usuário</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="editFirstName">Nome</Label>
+                  <Input
+                    id="editFirstName"
+                    value={editUser.firstName}
+                    onChange={(e) => setEditUser({...editUser, firstName: e.target.value})}
+                    placeholder="Nome"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editLastName">Sobrenome</Label>
+                  <Input
+                    id="editLastName"
+                    value={editUser.lastName}
+                    onChange={(e) => setEditUser({...editUser, lastName: e.target.value})}
+                    placeholder="Sobrenome"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="editEmail">Email</Label>
+                <Input
+                  id="editEmail"
+                  type="email"
+                  value={editUser.email}
+                  onChange={(e) => setEditUser({...editUser, email: e.target.value})}
+                  placeholder="email@exemplo.com"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="editPassword">Nova Senha (opcional)</Label>
+                <Input
+                  id="editPassword"
+                  type="password"
+                  value={editUser.password}
+                  onChange={(e) => setEditUser({...editUser, password: e.target.value})}
+                  placeholder="Deixe em branco para manter a senha atual"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="editUserType">Tipo de Usuário</Label>
+                <Select value={editUser.userType} onValueChange={(value: any) => setEditUser({...editUser, userType: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cliente">Cliente</SelectItem>
+                    <SelectItem value="guia">Guia</SelectItem>
+                    <SelectItem value="admin">Administrador</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleUpdateUser}>
+                  Atualizar Usuário
                 </Button>
               </div>
             </div>
@@ -369,10 +580,10 @@ const UsersManagementPage = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-2">
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => handleEditUser(user)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                        <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700" onClick={() => handleDeleteUser(user)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>

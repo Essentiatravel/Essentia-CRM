@@ -19,8 +19,16 @@ export const users = pgTable("users", {
   email: varchar("email").unique(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
+  nome: varchar("nome"), // Nome completo - usado pelas funções de database
   profileImageUrl: varchar("profile_image_url"),
   userType: varchar("user_type").default("admin"), // admin, guia, cliente
+  telefone: varchar("telefone"),
+  endereco: varchar("endereco"),
+  cpf: varchar("cpf"),
+  dataNascimento: varchar("data_nascimento"),
+  senha: varchar("senha"),
+  passwordHash: varchar("password_hash"),
+  status: varchar("status").default("ativo"), // ativo, inativo
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

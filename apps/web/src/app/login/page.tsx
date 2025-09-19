@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,9 @@ import { Eye, EyeOff, LogIn, MapPin, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function LoginPage() {
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/admin';
+
   const [formData, setFormData] = useState({
     email: "",
     password: ""
@@ -65,7 +69,10 @@ export default function LoginPage() {
 
         localStorage.setItem('auth-user', JSON.stringify(data.user));
 
-        if (data.user.userType === 'admin') {
+        // Redirecionar para a página solicitada ou dashboard baseado no tipo de usuário
+        if (redirectTo && redirectTo !== '/login') {
+          window.location.href = redirectTo;
+        } else if (data.user.userType === 'admin') {
           window.location.href = '/admin';
         } else if (data.user.userType === 'guia') {
           window.location.href = '/guia';

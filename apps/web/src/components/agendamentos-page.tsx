@@ -223,12 +223,12 @@ const TaskCard: React.FC<{
         <div className="space-y-2 mb-3">
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <User className="h-3 w-3" />
-            <span>{tarefa.cliente_nome || 'Cliente não encontrado'}</span>
+            <span>{tarefa.cliente_nome || 'Sem cliente definido'}</span>
           </div>
-          
+
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Location className="h-3 w-3" />
-            <span>{tarefa.guia_nome || 'Guia não atribuído'}</span>
+            <span>{tarefa.guia_nome || 'Sem guia definido'}</span>
           </div>
           
           <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -273,22 +273,18 @@ const AgendamentosPage: React.FC = () => {
   // Carregar dados das APIs
   useEffect(() => {
     const fetchData = async () => {
+      // Carregar agendamentos - temporariamente desabilitado (API não existe)
       try {
-        // Carregar agendamentos
-        const agendamentosResponse = await fetch('/api/agendamentos');
-        if (agendamentosResponse.ok) {
-          const agendamentosData = await agendamentosResponse.json();
-          setAgendamentos(agendamentosData);
-        }
+        // TODO: Implementar API de agendamentos
+        setAgendamentos([]);
       } catch (error) {
         console.error('Erro ao carregar agendamentos:', error);
-        toast.error('Erro ao carregar agendamentos');
       } finally {
         setLoadingAgendamentos(false);
       }
 
+      // Carregar passeios
       try {
-        // Carregar passeios
         const passeiosResponse = await fetch('/api/passeios');
         if (passeiosResponse.ok) {
           const passeiosData = await passeiosResponse.json();
@@ -296,35 +292,26 @@ const AgendamentosPage: React.FC = () => {
         }
       } catch (error) {
         console.error('Erro ao carregar passeios:', error);
-        toast.error('Erro ao carregar passeios');
       } finally {
         setLoadingPasseios(false);
       }
 
+      // Carregar clientes - temporariamente desabilitado (API não existe)
       try {
-        // Carregar clientes
-        const clientesResponse = await fetch('/api/clientes');
-        if (clientesResponse.ok) {
-          const clientesData = await clientesResponse.json();
-          setClientes(clientesData);
-        }
+        // TODO: Implementar API de clientes
+        setClientes([]);
       } catch (error) {
         console.error('Erro ao carregar clientes:', error);
-        toast.error('Erro ao carregar clientes');
       } finally {
         setLoadingClientes(false);
       }
 
+      // Carregar guias - temporariamente desabilitado (API não existe)
       try {
-        // Carregar guias
-        const guiasResponse = await fetch('/api/guias');
-        if (guiasResponse.ok) {
-          const guiasData = await guiasResponse.json();
-          setGuias(guiasData);
-        }
+        // TODO: Implementar API de guias
+        setGuias([]);
       } catch (error) {
         console.error('Erro ao carregar guias:', error);
-        toast.error('Erro ao carregar guias');
       } finally {
         setLoadingGuias(false);
       }
@@ -334,49 +321,15 @@ const AgendamentosPage: React.FC = () => {
   }, []);
 
   const refetchAgendamentos = async () => {
-    try {
-      const response = await fetch('/api/agendamentos');
-      if (response.ok) {
-        const data = await response.json();
-        setAgendamentos(data);
-      }
-    } catch (error) {
-      console.error('Erro ao recarregar agendamentos:', error);
-    }
+    // Temporariamente desabilitado - API não existe
+    console.log('refetchAgendamentos chamado - API não implementada');
+    return;
   };
 
   const onDragEnd = async (result: DropResult) => {
-    const { destination, source, draggableId } = result;
-
-    if (!destination) return;
-
-    if (
-      destination.droppableId === source.droppableId &&
-      destination.index === source.index
-    ) {
-      return;
-    }
-
-    // Atualizar status no banco via API
-    try {
-      const response = await fetch(`/api/agendamentos/${draggableId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: destination.droppableId }),
-      });
-
-      if (response.ok) {
-        await refetchAgendamentos();
-        toast.success("Status atualizado com sucesso!");
-      } else {
-        toast.error("Erro ao atualizar status");
-      }
-    } catch (error) {
-      console.error('Erro ao atualizar status:', error);
-      toast.error("Erro ao atualizar status");
-    }
+    // Temporariamente desabilitado - API não existe
+    toast.info("Funcionalidade de arrastar e soltar será implementada quando a API de agendamentos estiver pronta");
+    return;
   };
 
   const getTarefasByStatus = (status: string) => {
@@ -384,81 +337,17 @@ const AgendamentosPage: React.FC = () => {
   };
 
   const handleNovaTarefa = async (data: any) => {
-    const passeio = passeios.find(p => p.id === data.passeioId);
-    
-    if (passeio) {
-      const valorTotal = passeio.preco * data.numeroPessoas;
-      
-      try {
-        const response = await fetch('/api/agendamentos', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            passeioId: data.passeioId,
-            clienteId: data.clienteId,
-            guiaId: data.guiaId || undefined,
-            dataPasseio: data.data,
-            numeroPessoas: data.numeroPessoas,
-            valorTotal: valorTotal,
-            percentualComissao: data.comissaoPercentual || 30,
-            observacoes: data.observacoes || undefined,
-          }),
-        });
-
-        if (response.ok) {
-          await refetchAgendamentos();
-          toast.success("Agendamento criado com sucesso!");
-          setIsModalOpen(false);
-          setEditingTarefa(null);
-        } else {
-          toast.error("Erro ao criar agendamento");
-        }
-      } catch (error) {
-        console.error('Erro ao criar agendamento:', error);
-        toast.error("Erro ao criar agendamento");
-      }
-    }
+    // Temporariamente desabilitado - API não existe
+    toast.info("Funcionalidade de criar agendamentos será implementada quando a API estiver pronta");
+    setIsModalOpen(false);
+    setEditingTarefa(null);
   };
 
   const handleEditarTarefa = async (data: any) => {
-    const passeio = passeios.find(p => p.id === data.passeioId);
-    
-    if (passeio && editingTarefa) {
-      const valorTotal = passeio.preco * data.numeroPessoas;
-      
-      try {
-        const response = await fetch(`/api/agendamentos/${editingTarefa.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            passeioId: data.passeioId,
-            clienteId: data.clienteId,
-            guiaId: data.guiaId || undefined,
-            dataPasseio: data.data,
-            numeroPessoas: data.numeroPessoas,
-            valorTotal: valorTotal,
-            percentualComissao: data.comissaoPercentual || 30,
-            observacoes: data.observacoes || undefined,
-          }),
-        });
-
-        if (response.ok) {
-          await refetchAgendamentos();
-          toast.success("Agendamento atualizado com sucesso!");
-          setIsModalOpen(false);
-          setEditingTarefa(null);
-        } else {
-          toast.error("Erro ao atualizar agendamento");
-        }
-      } catch (error) {
-        console.error('Erro ao atualizar agendamento:', error);
-        toast.error("Erro ao atualizar agendamento");
-      }
-    }
+    // Temporariamente desabilitado - API não existe
+    toast.info("Funcionalidade de editar agendamentos será implementada quando a API estiver pronta");
+    setIsModalOpen(false);
+    setEditingTarefa(null);
   };
 
   const handleEditClick = (tarefa: Tarefa) => {
@@ -472,45 +361,13 @@ const AgendamentosPage: React.FC = () => {
   };
 
   const handleAprovarAgendamento = async (agendamentoId: string) => {
-    try {
-      const response = await fetch(`/api/agendamentos/${agendamentoId}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: 'confirmadas' }),
-      });
-
-      if (response.ok) {
-        await refetchAgendamentos();
-        toast.success("Agendamento aprovado e enviado para o calendário!");
-      } else {
-        toast.error("Erro ao aprovar agendamento");
-      }
-    } catch (error) {
-      console.error('Erro ao aprovar agendamento:', error);
-      toast.error("Erro ao aprovar agendamento");
-    }
+    // Temporariamente desabilitado - API não existe
+    toast.info("Funcionalidade de aprovar agendamentos será implementada quando a API estiver pronta");
   };
 
   const handleRemoverAgendamento = async (agendamentoId: string) => {
-    if (window.confirm('Tem certeza que deseja remover este agendamento?')) {
-      try {
-        const response = await fetch(`/api/agendamentos/${agendamentoId}`, {
-          method: 'DELETE',
-        });
-
-        if (response.ok) {
-          await refetchAgendamentos();
-          toast.success("Agendamento removido com sucesso!");
-        } else {
-          toast.error("Erro ao remover agendamento");
-        }
-      } catch (error) {
-        console.error('Erro ao remover agendamento:', error);
-        toast.error("Erro ao remover agendamento");
-      }
-    }
+    // Temporariamente desabilitado - API não existe
+    toast.info("Funcionalidade de remover agendamentos será implementada quando a API estiver pronta");
   };
 
   if (loadingAgendamentos || loadingPasseios || loadingClientes || loadingGuias) {

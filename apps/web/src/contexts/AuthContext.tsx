@@ -36,12 +36,21 @@ export function useAuth() {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isClient) return;
+
     const fetchUser = async () => {
       try {
         // Primeiro tenta pegar do servidor
-        const response = await fetch('/api/auth/me');
+        const response = await fetch('/api/auth/me', {
+          credentials: 'include' // Importante para cookies no Replit
+        });
         if (response.ok) {
           const { user: userData } = await response.json();
           if (userData) {
@@ -52,20 +61,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         // Se não conseguir do servidor, tenta localStorage (para demo)
-        const localUser = localStorage.getItem('auth-user');
-        if (localUser) {
-          const userData = JSON.parse(localUser);
-          setUser(userData);
+        if (typeof window !== 'undefined') {
+          const localUser = localStorage.getItem('auth-user');
+          if (localUser) {
+            const userData = JSON.parse(localUser);
+            setUser(userData);
+          }
         }
       } catch (error) {
         console.log('User not authenticated');
 
         // Fallback para localStorage
         try {
-          const localUser = localStorage.getItem('auth-user');
-          if (localUser) {
-            const userData = JSON.parse(localUser);
-            setUser(userData);
+          if (typeof window !== 'undefined') {
+            const localUser = localStorage.getItem('auth-user');
+            if (localUser) {
+              const userData = JSON.parse(localUser);
+              setUser(userData);
+            }
           }
         } catch (e) {
           console.log('No local user data');
@@ -76,24 +89,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     fetchUser();
-  }, []);
+  }, [isClient]);
 
   const login = () => {
+    if (typeof window === 'undefined') return;
     const currentPath = window.location.pathname;
-    window.location.href = `/api/auth/login?redirect=${encodeURIComponent(currentPath)}`;
+    window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
   };
 
   const logout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      localStorage.removeItem('auth-user');
+      if (typeof window === 'undefined') return;
+
+      // Primeiro remove localmente
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('auth-user');
+      }
       setUser(null);
+
+      // Então chama a API (mesmo que falhe, o logout local já aconteceu)
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include' // Importante para cookies no Replit
+      });
+
+      // Redireciona para home
       window.location.href = '/';
     } catch (error) {
       console.error('Logout error:', error);
-      localStorage.removeItem('auth-user');
-      setUser(null);
-      window.location.href = '/';
+      // Mesmo com erro na API, já fizemos logout local
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
     }
   };
 

@@ -32,13 +32,14 @@ export const AdminMobileNav: React.FC<MobileNavProps> = ({
   const [isOpen, setIsOpen] = useState(false);
 
   const navigationItems = [
-    { icon: Home, label: "Dashboard", active: true },
-    { icon: Calendar, label: "Agendamentos" },
-    { icon: CalendarDays, label: "Calendário Global" },
-    { icon: Users, label: "Guias" },
-    { icon: Heart, label: "Clientes" },
-    { icon: MapPin, label: "Passeios" },
-    { icon: DollarSign, label: "Financeiro" },
+    { icon: Home, label: "Dashboard", href: "/admin" },
+    { icon: Calendar, label: "Agendamentos", href: "/admin/agendamentos" },
+    { icon: CalendarDays, label: "Calendário Global", href: "/admin/calendario" },
+    { icon: User, label: "Usuários", href: "/admin/usuarios" },
+    { icon: Users, label: "Guias", href: "/admin/guias" },
+    { icon: Heart, label: "Clientes", href: "/admin/clientes" },
+    { icon: MapPin, label: "Passeios", href: "/admin/passeios" },
+    { icon: DollarSign, label: "Financeiro", href: "/admin/financeiro" },
   ];
 
   return (
@@ -99,12 +100,8 @@ export const AdminMobileNav: React.FC<MobileNavProps> = ({
                   {navigationItems.map((item) => (
                     <a
                       key={item.label}
-                      href="#"
-                      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        item.active
-                          ? "bg-blue-50 text-blue-700 border-r-2 border-blue-700"
-                          : "text-gray-700 hover:bg-gray-50"
-                      }`}
+                      href={item.href}
+                      className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-gray-700 hover:bg-gray-50"
                       onClick={() => setIsOpen(false)}
                     >
                       <item.icon className="h-4 w-4" />
