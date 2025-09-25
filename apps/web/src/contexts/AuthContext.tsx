@@ -47,42 +47,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const fetchUser = async () => {
       try {
-        // Primeiro tenta pegar do servidor
-        const response = await fetch('/api/auth/me', {
-          credentials: 'include' // Importante para cookies no Replit
-        });
-        if (response.ok) {
-          const { user: userData } = await response.json();
-          if (userData) {
-            setUser(userData);
-            setLoading(false);
-            return;
-          }
-        }
-
-        // Se não conseguir do servidor, tenta localStorage (para demo)
+        // Fallback para localStorage primeiro (mais confiável no desenvolvimento)
         if (typeof window !== 'undefined') {
           const localUser = localStorage.getItem('auth-user');
           if (localUser) {
-            const userData = JSON.parse(localUser);
-            setUser(userData);
+            try {
+              const userData = JSON.parse(localUser);
+              setUser(userData);
+            } catch (e) {
+              console.log('Invalid localStorage data');
+              localStorage.removeItem('auth-user');
+            }
           }
         }
       } catch (error) {
-        console.log('User not authenticated');
-
-        // Fallback para localStorage
-        try {
-          if (typeof window !== 'undefined') {
-            const localUser = localStorage.getItem('auth-user');
-            if (localUser) {
-              const userData = JSON.parse(localUser);
-              setUser(userData);
-            }
-          }
-        } catch (e) {
-          console.log('No local user data');
-        }
+        console.log('Error loading user:', error);
       } finally {
         setLoading(false);
       }
