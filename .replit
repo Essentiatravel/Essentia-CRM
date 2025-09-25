@@ -23,6 +23,10 @@ args = "npm run dev:web"
 task = "workflow.run"
 args = "TourGuide Frontend"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "TourGuide Server"
+
 [[workflows.workflow]]
 name = "TourGuide Frontend"
 author = "agent"
@@ -80,6 +84,18 @@ mode = "sequential"
 task = "shell.exec"
 args = "cd apps/web && npm run dev -- --port 5000 --hostname 0.0.0.0"
 
+[[workflows.workflow]]
+name = "TourGuide Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd apps/web && npm run dev"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[ports]]
 localPort = 3000
 externalPort = 3000
@@ -91,6 +107,10 @@ externalPort = 3001
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 33331
+externalPort = 3002
 
 [deployment]
 deploymentTarget = "autoscale"
