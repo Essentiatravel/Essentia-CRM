@@ -104,21 +104,6 @@ export async function POST(request: NextRequest) {
 
     // Retornar erro mais específico quando possível
     if (error instanceof Error) {
-      // Verificar tipos específicos de erro
-      if (error.message.includes('authentication failed')) {
-        return NextResponse.json(
-          { error: 'Erro de conexão com banco de dados. Verifique as configurações.' },
-          { status: 503 }
-        );
-      }
-      
-      if (error.message.includes('já está em uso')) {
-        return NextResponse.json(
-          { error: error.message },
-          { status: 400 }
-        );
-      }
-
       return NextResponse.json(
         { error: `Erro ao criar usuário: ${error.message}` },
         { status: 500 }

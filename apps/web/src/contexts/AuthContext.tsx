@@ -47,41 +47,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const fetchUser = async () => {
       try {
-        // Primeiro verifica localStorage para ser mais rápido
-        if (typeof window !== 'undefined') {
-          const localUser = localStorage.getItem('auth-user');
-          if (localUser) {
-            const userData = JSON.parse(localUser);
+        // Primeiro tenta pegar do servidor
+        const response = await fetch('/api/auth/me', {
+          credentials: 'include' // Importante para cookies no Replit
+        });
+        if (response.ok) {
+          const { user: userData } = await response.json();
+          if (userData) {
             setUser(userData);
             setLoading(false);
             return;
           }
         }
 
-        // Timeout para o fetch da API para não ficar travado
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 segundos timeout
-
-        try {
-          const response = await fetch('/api/auth/me', {
-            credentials: 'include',
-            signal: controller.signal
-          });
-          clearTimeout(timeoutId);
-
-          if (response.ok) {
-            const { user: userData } = await response.json();
-            if (userData) {
-              setUser(userData);
-            }
-          }
-        } catch (fetchError) {
-          if (fetchError.name !== 'AbortError') {
-            console.log('Auth API not available, continuing without authentication');
+        // Se não conseguir do servidor, tenta localStorage (para demo)
+        if (typeof window !== 'undefined') {
+          const localUser = localStorage.getItem('auth-user');
+          if (localUser) {
+            const userData = JSON.parse(localUser);
+            setUser(userData);
           }
         }
       } catch (error) {
-        console.log('Error checking authentication');
+        console.log('User not authenticated');
+
+        // Fallback para localStorage
+        try {
+          if (typeof window !== 'undefined') {
+            const localUser = localStorage.getItem('auth-user');
+            if (localUser) {
+              const userData = JSON.parse(localUser);
+              setUser(userData);
+            }
+          }
+        } catch (e) {
+          console.log('No local user data');
+        }
       } finally {
         setLoading(false);
       }
