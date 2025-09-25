@@ -1,57 +1,30 @@
 import { NextResponse } from 'next/server';
+import { db } from '@/lib/db';
+import { eq } from 'drizzle-orm';
 
-// Dados simulados para passeios
-const passeiosSimulados = [
-  {
-    id: "passeio_001",
-    nome: "Tour Roma Histórica",
-    descricao: "Explore os pontos turísticos mais famosos de Roma",
-    duracao: "4 horas",
-    preco: 120.00,
-    categoria: "História",
-    ativo: true
-  },
-  {
-    id: "passeio_002",
-    nome: "Vaticano Completo",
-    descricao: "Visita guiada ao Vaticano e Capela Sistina",
-    duracao: "3 horas",
-    preco: 150.00,
-    categoria: "Religioso",
-    ativo: true
-  },
-  {
-    id: "passeio_003",
-    nome: "Toscana Day Trip",
-    descricao: "Dia completo pela bela região da Toscana",
-    duracao: "8 horas",
-    preco: 280.00,
-    categoria: "Natureza",
-    ativo: true
-  },
-  {
-    id: "passeio_004",
-    nome: "Food Tour Italiano",
-    descricao: "Experimente a autêntica culinária italiana",
-    duracao: "3 horas",
-    preco: 90.00,
-    categoria: "Gastronomia",
-    ativo: true
-  },
-  {
-    id: "passeio_005",
-    nome: "Sunset em Positano",
-    descricao: "Pôr do sol mágico na Costa Amalfitana",
-    duracao: "5 horas",
-    preco: 200.00,
-    categoria: "Romântico",
-    ativo: true
-  }
-];
+// Schema inline para evitar problemas de import
+import { pgTable, text, integer, real, timestamp, varchar, jsonb } from "drizzle-orm/pg-core";
+
+const passeios = pgTable("passeios", {
+  id: varchar("id").primaryKey(),
+  nome: varchar("nome").notNull(),
+  descricao: text("descricao").notNull(),
+  preco: real("preco").notNull(),
+  duracao: varchar("duracao").notNull(),
+  categoria: varchar("categoria").notNull(),
+  imagens: jsonb("imagens"),
+  inclusoes: jsonb("inclusoes"),
+  idiomas: jsonb("idiomas"),
+  capacidadeMaxima: integer("capacidade_maxima").default(20),
+  ativo: integer("ativo").default(1),
+  criadoEm: timestamp("criado_em").defaultNow(),
+  atualizadoEm: timestamp("atualizado_em").defaultNow(),
+});
 
 export async function GET() {
   try {
-    return NextResponse.json(passeiosSimulados);
+    const todosPasseios = await db.select().from(passeios);
+    return NextResponse.json(todosPasseios);
   } catch (error) {
     console.error('Erro ao buscar passeios:', error);
     return NextResponse.json(
@@ -65,15 +38,23 @@ export async function POST(request: Request) {
   try {
     const passeioData = await request.json();
 
-    // Simular criação de passeio
+    const novoPasseioId = `passeio_${Date.now()}`;
+    
     const novoPasseio = {
-      id: `passeio_${Date.now()}`,
-      ...passeioData,
-      ativo: true
+      id: novoPasseioId,
+      nome: passeioData.name || passeioData.nome,
+      descricao: passeioData.description || passeioData.descricao,
+      preco: passeioData.price || passeioData.preco,
+      duracao: `${passeioData.duration || passeioData.duracao}h`,
+      categoria: passeioData.type || passeioData.categoria,
+      imagens: JSON.stringify(passeioData.images || []),
+      inclusoes: JSON.stringify(passeioData.includedItems || []),
+      idiomas: JSON.stringify(passeioData.languages || []),
+      capacidadeMaxima: passeioData.maxPeople || 20,
+      ativo: 1
     };
 
-    // Em produção, isso salvaria no banco de dados
-    passeiosSimulados.push(novoPasseio);
+    await db.insert(passeios).values(novoPasseio);
 
     return NextResponse.json({
       id: novoPasseio.id,

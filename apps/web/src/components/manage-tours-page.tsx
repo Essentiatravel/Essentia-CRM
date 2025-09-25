@@ -313,7 +313,11 @@ export default function ManageToursPage() {
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Navegação mobile */}
-      <AdminMobileNav userName="ELISSON UZUAL" userEmail="uzualelisson@gmail.com" />
+      <AdminMobileNav 
+        userName="ELISSON UZUAL" 
+        userEmail="uzualelisson@gmail.com"
+        onLogout={() => window.location.href = '/api/logout'} 
+      />
       
       {/* Barra lateral */}
       <Sidebar />
