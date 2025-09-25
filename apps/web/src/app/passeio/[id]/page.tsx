@@ -62,40 +62,17 @@ export default function PasseioDetalhes() {
   useEffect(() => {
     const carregarPasseio = async () => {
       try {
-        const response = await fetch('/api/passeios');
+        const response = await fetch(`/api/passeios/${params.id}`);
         if (response.ok) {
-          const data = await response.json();
-          const passeioEncontrado = data.find((p: Passeio) => p.id === params.id);
-          if (passeioEncontrado) {
-            setPasseio(passeioEncontrado);
-          } else {
-            // Dados de fallback
-            setPasseio({
-              id: params.id as string,
-              nome: "Tour Roma Histórica",
-              descricao: "Explore os pontos turísticos mais famosos de Roma com um guia especializado. Visitaremos o Coliseu, Fórum Romano, Panteão e muito mais. Uma experiência única pela cidade eterna!",
-              preco: 120,
-              duracao: "4h",
-              categoria: "História",
-              capacidadeMaxima: 15,
-              inclusoes: JSON.stringify(["Guia especializado", "Ingressos para monumentos", "Fones de ouvido", "Mapa da cidade"]),
-              idiomas: JSON.stringify(["Português", "Inglês", "Espanhol"]),
-              ativo: 1
-            });
-          }
+          const passeioData = await response.json();
+          setPasseio(passeioData);
+        } else {
+          console.error('Passeio não encontrado');
+          setPasseio(null);
         }
       } catch (error) {
         console.error('Erro ao carregar passeio:', error);
-        setPasseio({
-          id: params.id as string,
-          nome: "Tour Roma Histórica", 
-          descricao: "Explore os pontos turísticos mais famosos de Roma com um guia especializado.",
-          preco: 120,
-          duracao: "4h",
-          categoria: "História",
-          capacidadeMaxima: 15,
-          ativo: 1
-        });
+        setPasseio(null);
       } finally {
         setLoading(false);
       }
@@ -112,13 +89,20 @@ export default function PasseioDetalhes() {
       return;
     }
 
+    // Calcular valor final considerando descontos
+    const valorBase = (passeio?.preco || 0) * selectedPeople;
+    const desconto = isGroup && selectedPeople >= 5 ? 0.1 : 0;
+    const valorFinal = valorBase * (1 - desconto);
+
     const bookingData = {
       passeioId: passeio?.id,
       passeioNome: passeio?.nome,
       data: selectedDate,
       pessoas: selectedPeople,
       tipoReserva: isGroup ? "grupo" : "individual",
-      valorTotal: (passeio?.preco || 0) * selectedPeople,
+      valorOriginal: valorBase,
+      valorTotal: valorFinal,
+      desconto: desconto,
       cliente: customerInfo
     };
 

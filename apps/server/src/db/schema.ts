@@ -161,3 +161,25 @@ export type NovaTransacao = typeof transacoes.$inferInsert;
 
 export type Avaliacao = typeof avaliacoes.$inferSelect;
 export type NovaAvaliacao = typeof avaliacoes.$inferInsert;
+
+// Tabela de reservas - para armazenar reservas dos passeios turísticos
+export const reservas = pgTable("reservas", {
+  id: varchar("id").primaryKey(),
+  passeioId: varchar("passeio_id").notNull(),
+  passeioNome: varchar("passeio_nome").notNull(),
+  data: timestamp("data").notNull(),
+  pessoas: integer("pessoas").notNull(),
+  tipoReserva: varchar("tipo_reserva").notNull(),
+  valorTotal: real("valor_total").notNull(),
+  status: varchar("status").default("confirmada"),
+  clienteNome: varchar("cliente_nome").notNull(),
+  clienteEmail: varchar("cliente_email").notNull(),
+  clienteTelefone: varchar("cliente_telefone"),
+  clienteObservacoes: text("cliente_observacoes"),
+  metodoPagamento: varchar("metodo_pagamento").notNull(),
+  criadoEm: timestamp("criado_em").defaultNow(),
+  atualizadoEm: timestamp("atualizado_em").defaultNow(),
+});
+
+export type Reserva = typeof reservas.$inferSelect;
+export type NovaReserva = typeof reservas.$inferInsert;

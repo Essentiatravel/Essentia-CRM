@@ -30,7 +30,9 @@ interface BookingData {
   data: Date;
   pessoas: number;
   tipoReserva: string;
+  valorOriginal: number;
   valorTotal: number;
+  desconto: number;
   cliente: {
     nome: string;
     email: string;
@@ -69,26 +71,71 @@ export default function Checkout() {
 
     setProcessing(true);
     
-    // Simular processamento do pagamento
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    // Salvar reserva no localStorage como "concluída"
-    const reservaConcluida = {
-      ...bookingData,
-      id: `reserva_${Date.now()}`,
-      status: 'confirmada',
-      pagamento: {
-        metodo: paymentMethod,
-        processadoEm: new Date(),
-        ...paymentInfo
+    try {
+      // Simular processamento do pagamento
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Calcular valor final considerando PIX
+      const valorFinalComPix = paymentMethod === "pix" ? bookingData.valorTotal * 0.95 : bookingData.valorTotal;
+      
+      // Criar reserva no backend
+      const response = await fetch('/api/reservas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          passeioId: bookingData.passeioId,
+          passeioNome: bookingData.passeioNome,
+          data: bookingData.data,
+          pessoas: bookingData.pessoas,
+          tipoReserva: bookingData.tipoReserva,
+          valorTotal: valorFinalComPix,
+          clienteNome: bookingData.cliente.nome,
+          clienteEmail: bookingData.cliente.email,
+          clienteTelefone: bookingData.cliente.telefone,
+          clienteObservacoes: bookingData.cliente.observacoes,
+          metodoPagamento: paymentMethod
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        
+        // Salvar apenas informações básicas da reserva (sem dados sensíveis)
+        const reservaSegura = {
+          id: result.reservaId,
+          passeioNome: bookingData.passeioNome,
+          data: bookingData.data,
+          pessoas: bookingData.pessoas,
+          tipoReserva: bookingData.tipoReserva,
+          valorTotal: valorFinalComPix,
+          cliente: {
+            nome: bookingData.cliente.nome,
+            email: bookingData.cliente.email,
+            telefone: bookingData.cliente.telefone
+          },
+          pagamento: {
+            metodo: paymentMethod,
+            processadoEm: new Date()
+          },
+          status: 'confirmada'
+        };
+        
+        localStorage.setItem('ultimaReserva', JSON.stringify(reservaSegura));
+        localStorage.removeItem('bookingData');
+        
+        // Redirecionar para página de confirmação
+        router.push('/confirmacao');
+      } else {
+        throw new Error('Erro ao processar reserva');
       }
-    };
-    
-    localStorage.setItem('ultimaReserva', JSON.stringify(reservaConcluida));
-    localStorage.removeItem('bookingData');
-    
-    // Redirecionar para página de confirmação
-    router.push('/confirmacao');
+    } catch (error) {
+      console.error('Erro no pagamento:', error);
+      alert('Erro ao processar pagamento. Tente novamente.');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   if (!bookingData) {
@@ -102,8 +149,7 @@ export default function Checkout() {
     );
   }
 
-  const desconto = bookingData.tipoReserva === "grupo" && bookingData.pessoas >= 5 ? 0.1 : 0;
-  const valorOriginal = bookingData.valorTotal / (1 - desconto);
+  const valorComPix = paymentMethod === "pix" ? bookingData.valorTotal * 0.95 : bookingData.valorTotal;
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -308,12 +354,12 @@ export default function Checkout() {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span>Subtotal ({bookingData.pessoas}x)</span>
-                      <span>R$ {valorOriginal.toFixed(2)}</span>
+                      <span>R$ {bookingData.valorOriginal.toFixed(2)}</span>
                     </div>
-                    {desconto > 0 && (
+                    {bookingData.desconto > 0 && (
                       <div className="flex justify-between text-green-600">
                         <span>Desconto grupo (10%)</span>
-                        <span>-R$ {(valorOriginal * desconto).toFixed(2)}</span>
+                        <span>-R$ {(bookingData.valorOriginal * bookingData.desconto).toFixed(2)}</span>
                       </div>
                     )}
                     {paymentMethod === "pix" && (
@@ -324,7 +370,7 @@ export default function Checkout() {
                     )}
                     <div className="flex justify-between font-semibold text-lg border-t pt-2">
                       <span>Total</span>
-                      <span>R$ {paymentMethod === "pix" ? (bookingData.valorTotal * 0.95).toFixed(2) : bookingData.valorTotal.toFixed(2)}</span>
+                      <span>R$ {valorComPix.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
