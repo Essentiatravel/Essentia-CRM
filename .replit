@@ -8,7 +8,7 @@ expertMode = true
 integrations = ["javascript_log_in_with_replit:1.0.0", "javascript_database:1.0.0"]
 
 [workflows]
-runButton = "Web App"
+runButton = "Project"
 
 [[workflows.workflow]]
 name = "Project"
@@ -18,19 +18,22 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev:web"
-waitForPort = 3000
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "TourGuide Frontend"
 
 [[workflows.workflow]]
 name = "TourGuide Frontend"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev:web"
-waitForPort = 3000
-
-[workflows.workflow.metadata]
-outputType = "webview"
+waitForPort = 5000
 
 [[workflows.workflow]]
 name = "TourGuide Full Stack"
@@ -88,10 +91,6 @@ externalPort = 3001
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 43513
-externalPort = 3002
 
 [deployment]
 deploymentTarget = "autoscale"
