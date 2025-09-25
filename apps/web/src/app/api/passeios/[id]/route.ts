@@ -23,10 +23,11 @@ const passeios = pgTable("passeios", {
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const passeio = await db.select().from(passeios).where(eq(passeios.id, params.id)).limit(1);
+    const { id } = await params;
+    const passeio = await db.select().from(passeios).where(eq(passeios.id, id)).limit(1);
     
     if (passeio.length === 0) {
       return NextResponse.json({ error: 'Passeio não encontrado' }, { status: 404 });
