@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from 'react';
@@ -14,13 +15,15 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    // Se o usuário está logado, redireciona para o dashboard admin
-    if (!loading && user && user.userType === 'admin') {
-      router.push('/admin');
-    } else if (!loading && user && user.userType === 'guia') {
-      router.push('/guia');
-    } else if (!loading && user && user.userType === 'cliente') {
-      router.push('/cliente');
+    // Se o usuário está logado, redireciona para o dashboard apropriado
+    if (!loading && user) {
+      if (user.userType === 'admin') {
+        router.push('/admin');
+      } else if (user.userType === 'guia') {
+        router.push('/guia');
+      } else if (user.userType === 'cliente') {
+        router.push('/cliente');
+      }
     }
   }, [user, loading, router]);
 
@@ -35,7 +38,7 @@ export default function Home() {
     );
   }
 
-  // Se já está logado, não mostra a landing page
+  // Se já está logado, mostra loading enquanto redireciona
   if (user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -47,6 +50,7 @@ export default function Home() {
     );
   }
 
+  // Se não há usuário logado, mostra a landing page
   return (
     <main className="min-h-screen">
       <HeroSection />
