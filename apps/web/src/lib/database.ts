@@ -1,7 +1,23 @@
 import { neon } from '@neondatabase/serverless';
 import bcrypt from 'bcrypt';
 
-const sql = neon(process.env.DATABASE_URL!);
+// Verificar se a variável de ambiente existe
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL não está definida nas variáveis de ambiente');
+}
+
+const sql = neon(process.env.DATABASE_URL);
+
+// Função para testar a conexão
+async function testConnection() {
+  try {
+    await sql`SELECT 1`;
+    console.log('Conexão com banco de dados estabelecida com sucesso');
+  } catch (error) {
+    console.error('Erro na conexão com banco de dados:', error);
+    throw new Error('Falha na conexão com o banco de dados');
+  }
+}
 
 export interface User {
   id: string;
@@ -30,7 +46,19 @@ export async function createUser(userData: {
   try {
     console.log('Criando usuário com dados:', { ...userData, senha: '[HIDDEN]' });
 
+    // Testar conexão primeiro
+    await testConnection();
+
     const { email, nome, userType, senha, telefone, endereco, cpf } = userData;
+
+    // Verificar se o email já existe
+    const existingUser = await sql`
+      SELECT id FROM users WHERE email = ${email} LIMIT 1
+    `;
+
+    if (existingUser.length > 0) {
+      throw new Error('Email já está em uso');
+    }
 
     // Gerar hash da senha
     const saltRounds = 10;
@@ -46,13 +74,19 @@ export async function createUser(userData: {
         id, email, nome, "userType", password_hash, telefone, endereco, cpf, "createdAt", "updatedAt"
       ) VALUES (
         ${id}, ${email}, ${nome}, ${userType}, ${password_hash}, ${telefone || null}, ${endereco || null}, ${cpf || null}, NOW(), NOW()
-      ) RETURNING *
+      ) RETURNING id, email, nome, "userType", telefone, endereco, cpf, "createdAt", "updatedAt"
     `;
 
     console.log('Usuário criado com sucesso:', result[0]);
     return result[0] as User;
   } catch (error) {
     console.error('Erro detalhado ao criar usuário:', error);
+    
+    // Verificar se é erro de conexão
+    if (error instanceof Error && error.message.includes('authentication failed')) {
+      throw new Error('Erro de autenticação com o banco de dados. Verifique as credenciais.');
+    }
+    
     throw error;
   }
 }
