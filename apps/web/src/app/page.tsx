@@ -35,7 +35,20 @@ export default function Home() {
     );
   }
 
-  // Se já está logado, não mostra a landing page
+  // Se não há usuário logado, mostra a landing page
+  if (!user && !loading) {
+    return (
+      <main className="min-h-screen">
+        <HeroSection />
+        <ExperienceTypes />
+        <Destinations />
+        <Differentials />
+        <Footer />
+      </main>
+    );
+  }
+
+  // Se há usuário logado, mostra loading enquanto redireciona
   if (user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -47,13 +60,6 @@ export default function Home() {
     );
   }
 
-  return (
-    <main className="min-h-screen">
-      <HeroSection />
-      <ExperienceTypes />
-      <Destinations />
-      <Differentials />
-      <Footer />
-    </main>
-  );
+  // Fallback - não deveria chegar aqui
+  return null;
 }

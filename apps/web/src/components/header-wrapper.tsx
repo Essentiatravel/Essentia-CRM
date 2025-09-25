@@ -1,35 +1,26 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import Header from "./header";
+import { usePathname } from "next/navigation";
 
 export default function HeaderWrapper() {
-  const [isClient, setIsClient] = useState(false);
+  const { user, loading } = useAuth();
   const pathname = usePathname();
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+  // Não mostrar header em páginas de autenticação
+  const authPages = ['/login', '/register'];
+  const isAuthPage = authPages.includes(pathname);
 
-  // Não renderizar no servidor para evitar problemas de hidratação
-  if (!isClient) {
+  if (isAuthPage) {
     return null;
   }
 
-  const isAdminRoute = pathname?.startsWith("/admin");
-
-  if (isAdminRoute) {
+  // Mostrar header mesmo durante loading na página principal
+  const isHomePage = pathname === '/';
+  if (loading && !isHomePage) {
     return null;
   }
 
-  return (
-    <>
-      <Header />
-      <div className="pt-20" />
-    </>
-  );
+  return <Header />;
 }
-
-
-
