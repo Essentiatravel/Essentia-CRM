@@ -43,14 +43,14 @@ export async function POST(request: Request) {
     const novoPasseio = {
       id: novoPasseioId,
       nome: passeioData.name || passeioData.nome,
-      descricao: passeioData.description || passeioData.descricao,
-      preco: passeioData.price || passeioData.preco,
+      descricao: passeioData.description || passeioData.descricao || passeioData.name || passeioData.nome || "Descrição não informada",
+      preco: parseFloat(passeioData.price || passeioData.preco) || 0,
       duracao: `${passeioData.duration || passeioData.duracao}h`,
       categoria: passeioData.type || passeioData.categoria,
       imagens: JSON.stringify(passeioData.images || []),
       inclusoes: JSON.stringify(passeioData.includedItems || []),
       idiomas: JSON.stringify(passeioData.languages || []),
-      capacidadeMaxima: passeioData.maxPeople || 20,
+      capacidadeMaxima: parseInt(passeioData.maxPeople) || 20,
       ativo: 1
     };
 
