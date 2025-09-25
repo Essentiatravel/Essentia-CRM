@@ -140,8 +140,8 @@ export default function PasseioDetalhes() {
     );
   }
 
-  const inclusoes = passeio.inclusoes ? JSON.parse(passeio.inclusoes) : [];
-  const idiomas = passeio.idiomas ? JSON.parse(passeio.idiomas) : [];
+  const inclusoes = Array.isArray(passeio.inclusoes) ? passeio.inclusoes : (passeio.inclusoes ? JSON.parse(passeio.inclusoes) : []);
+  const idiomas = Array.isArray(passeio.idiomas) ? passeio.idiomas : (passeio.idiomas ? JSON.parse(passeio.idiomas) : []);
   const valorTotal = passeio.preco * selectedPeople;
   const desconto = isGroup && selectedPeople >= 5 ? 0.1 : 0;
   const valorFinal = valorTotal * (1 - desconto);
