@@ -164,10 +164,46 @@ export default function PasseiosCards({ destaque = false, limite }: PasseiosCard
                     🔥 Até 15% OFF
                   </Badge>
                 </div>
-                <div className="w-full h-full bg-gradient-to-br from-blue-600 via-purple-600 to-orange-500 flex items-center justify-center relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/10 to-transparent"></div>
-                  <span className="text-6xl drop-shadow-2xl relative z-10">🏛️</span>
-                </div>
+                {(() => {
+                  // Parse imagens do passeio
+                  let imagensArray: string[] = [];
+                  try {
+                    if (passeio.imagens) {
+                      imagensArray = JSON.parse(passeio.imagens);
+                    }
+                  } catch (error) {
+                    console.warn('Erro ao fazer parse das imagens:', error);
+                  }
+
+                  const primeiraImagem = imagensArray && imagensArray.length > 0 ? imagensArray[0] : null;
+
+                  if (primeiraImagem) {
+                    return (
+                      <div className="w-full h-full relative overflow-hidden">
+                        <Image
+                          src={primeiraImagem}
+                          alt={passeio.nome}
+                          fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                          className="object-cover transition-transform duration-300 hover:scale-110"
+                          onError={(e) => {
+                            console.error('Erro ao carregar imagem:', primeiraImagem);
+                            // Fallback para o emoji se a imagem não carregar
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    );
+                  } else {
+                    // Fallback para emoji se não houver imagem
+                    return (
+                      <div className="w-full h-full bg-gradient-to-br from-blue-600 via-purple-600 to-orange-500 flex items-center justify-center relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/10 to-transparent"></div>
+                        <span className="text-6xl drop-shadow-2xl relative z-10">🏛️</span>
+                      </div>
+                    );
+                  }
+                })()}
               </div>
 
               {/* Conteúdo do card */}

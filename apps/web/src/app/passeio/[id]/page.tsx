@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import Link from "next/link";
+import Image from "next/image";
 
 interface Passeio {
   id: string;
@@ -181,17 +182,52 @@ export default function PasseioDetalhes() {
               className="bg-white rounded-lg overflow-hidden shadow-sm"
             >
               {/* Imagem do passeio */}
-              <div className="h-80 bg-gradient-to-br from-blue-500 to-orange-400 flex items-center justify-center relative">
-                <div className="absolute top-4 left-4 flex gap-2">
+              <div className="h-80 relative overflow-hidden">
+                <div className="absolute top-4 left-4 flex gap-2 z-10">
                   <Badge className="bg-blue-600 text-white">{passeio.categoria}</Badge>
                   <Badge className="bg-green-600 text-white">Disponível</Badge>
                 </div>
-                <div className="absolute top-4 right-4">
+                <div className="absolute top-4 right-4 z-10">
                   <Badge className="bg-orange-500 text-white">
                     {isGroup && selectedPeople >= 5 ? "10% OFF Grupo" : "Melhor Preço"}
                   </Badge>
                 </div>
-                <span className="text-8xl">🏛️</span>
+                {(() => {
+                  // Parse imagens do passeio
+                  let imagensArray: string[] = [];
+                  try {
+                    if (passeio.imagens) {
+                      imagensArray = JSON.parse(passeio.imagens);
+                    }
+                  } catch (error) {
+                    console.warn('Erro ao fazer parse das imagens:', error);
+                  }
+
+                  const primeiraImagem = imagensArray && imagensArray.length > 0 ? imagensArray[0] : null;
+
+                  if (primeiraImagem) {
+                    return (
+                      <Image
+                        src={primeiraImagem}
+                        alt={passeio.nome}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 70vw, 60vw"
+                        className="object-cover"
+                        priority
+                        onError={(e) => {
+                          console.error('Erro ao carregar imagem:', primeiraImagem);
+                        }}
+                      />
+                    );
+                  } else {
+                    // Fallback para emoji se não houver imagem
+                    return (
+                      <div className="w-full h-full bg-gradient-to-br from-blue-500 to-orange-400 flex items-center justify-center">
+                        <span className="text-8xl">🏛️</span>
+                      </div>
+                    );
+                  }
+                })()}
               </div>
 
               <div className="p-6">
