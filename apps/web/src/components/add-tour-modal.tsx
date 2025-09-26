@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,8 @@ interface AddTourModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (tourData: TourData) => void;
+  initialData?: TourData;
+  isEdit?: boolean;
 }
 
 interface TourData {
@@ -28,8 +30,8 @@ interface TourData {
   status: string;
 }
 
-export default function AddTourModal({ isOpen, onClose, onSubmit }: AddTourModalProps) {
-  const [formData, setFormData] = useState<TourData>({
+export default function AddTourModal({ isOpen, onClose, onSubmit, initialData, isEdit = false }: AddTourModalProps) {
+  const [formData, setFormData] = useState<TourData>(initialData || {
     name: "",
     location: "",
     description: "",
@@ -43,6 +45,29 @@ export default function AddTourModal({ isOpen, onClose, onSubmit }: AddTourModal
     specialRequirements: "",
     status: "Ativo",
   });
+
+  // Atualizar formData quando initialData mudar (modo de edição)
+  useEffect(() => {
+    if (initialData && isEdit) {
+      setFormData(initialData);
+    } else if (!isEdit) {
+      // Reset para modo de adição
+      setFormData({
+        name: "",
+        location: "",
+        description: "",
+        type: "Cultural",
+        duration: 0,
+        price: 0,
+        maxPeople: 10,
+        languages: [],
+        includedItems: [],
+        images: [],
+        specialRequirements: "",
+        status: "Ativo",
+      });
+    }
+  }, [initialData, isEdit, isOpen]);
 
   const [newLanguage, setNewLanguage] = useState("");
   const [newIncludedItem, setNewIncludedItem] = useState("");
@@ -155,7 +180,7 @@ export default function AddTourModal({ isOpen, onClose, onSubmit }: AddTourModal
     <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-200">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-gray-900">Criar Novo Passeio</h2>
+          <h2 className="text-xl font-bold text-gray-900">{isEdit ? "Editar Passeio" : "Criar Novo Passeio"}</h2>
           <Button
             variant="ghost"
             size="sm"

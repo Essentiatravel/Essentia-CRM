@@ -31,6 +31,12 @@ interface Tour {
   duration: number;
   status: string;
   type: string;
+  description?: string;
+  maxPeople?: number;
+  languages?: string[];
+  includedItems?: string[];
+  images?: string[];
+  specialRequirements?: string;
 }
 
 // Dados mockados dos passeios
@@ -182,7 +188,7 @@ const Sidebar: React.FC = () => (
 );
 
 // Componente do dropdown de ações
-const ActionDropdown: React.FC<{ tour: Tour }> = ({ tour }) => {
+const ActionDropdown: React.FC<{ tour: Tour; onEditTour: (tourId: string) => void }> = ({ tour, onEditTour }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   // Fechar dropdown quando clicar fora
@@ -230,7 +236,7 @@ const ActionDropdown: React.FC<{ tour: Tour }> = ({ tour }) => {
             <button 
               className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               onClick={() => {
-                console.log("Editar passeio:", tour.id);
+                onEditTour(tour.id);
                 setIsOpen(false);
               }}
             >
@@ -256,6 +262,8 @@ const ActionDropdown: React.FC<{ tour: Tour }> = ({ tour }) => {
 
 export default function ManageToursPage() {
   const [isAddTourModalOpen, setIsAddTourModalOpen] = useState(false);
+  const [isEditTourModalOpen, setIsEditTourModalOpen] = useState(false);
+  const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
   const [tours, setTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -307,6 +315,65 @@ export default function ManageToursPage() {
       }
     } catch (error) {
       console.error('Erro ao criar passeio:', error);
+    }
+  };
+
+  const handleEditTour = async (tourId: string) => {
+    try {
+      // Buscar dados completos do passeio
+      const response = await fetch(`/api/passeios/${tourId}`);
+      if (response.ok) {
+        const passeioData = await response.json();
+        
+        // Formatar dados para o modal
+        const formattedTour: Tour = {
+          id: passeioData.id,
+          name: passeioData.nome,
+          location: passeioData.categoria,
+          price: passeioData.preco,
+          duration: parseInt(passeioData.duracao.replace('h', '')),
+          status: passeioData.ativo ? 'Ativo' : 'Inativo',
+          type: passeioData.categoria,
+          description: passeioData.descricao || '',
+          maxPeople: passeioData.capacidadeMaxima || 10,
+          languages: passeioData.idiomas ? JSON.parse(passeioData.idiomas) : [],
+          includedItems: passeioData.inclusoes ? JSON.parse(passeioData.inclusoes) : [],
+          images: passeioData.imagens ? JSON.parse(passeioData.imagens) : [],
+          specialRequirements: passeioData.requisitosEspeciais || '',
+        };
+        
+        setSelectedTour(formattedTour);
+        setIsEditTourModalOpen(true);
+      } else {
+        console.error('Erro ao buscar dados do passeio');
+      }
+    } catch (error) {
+      console.error('Erro ao buscar passeio:', error);
+    }
+  };
+
+  const handleUpdateTour = async (tourData: any) => {
+    try {
+      const response = await fetch(`/api/passeios/${selectedTour?.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(tourData),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Passeio atualizado:', result);
+        setIsEditTourModalOpen(false);
+        setSelectedTour(null);
+        // Recarregar a página para mostrar as alterações
+        window.location.reload();
+      } else {
+        console.error('Erro ao atualizar passeio');
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar passeio:', error);
     }
   };
 
@@ -429,7 +496,7 @@ export default function ManageToursPage() {
                             </Badge>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <ActionDropdown tour={tour} />
+                            <ActionDropdown tour={tour} onEditTour={handleEditTour} />
                           </td>
                         </tr>
                       ))}
@@ -447,6 +514,31 @@ export default function ManageToursPage() {
         isOpen={isAddTourModalOpen}
         onClose={() => setIsAddTourModalOpen(false)}
         onSubmit={handleAddTour}
+      />
+
+      {/* Modal para editar passeio */}
+      <AddTourModal
+        isOpen={isEditTourModalOpen}
+        onClose={() => {
+          setIsEditTourModalOpen(false);
+          setSelectedTour(null);
+        }}
+        onSubmit={handleUpdateTour}
+        initialData={selectedTour ? {
+          name: selectedTour.name,
+          location: selectedTour.location,
+          description: selectedTour.description || '',
+          type: selectedTour.type,
+          duration: selectedTour.duration,
+          price: selectedTour.price,
+          maxPeople: selectedTour.maxPeople || 10,
+          languages: selectedTour.languages || [],
+          includedItems: selectedTour.includedItems || [],
+          images: selectedTour.images || [],
+          specialRequirements: selectedTour.specialRequirements || '',
+          status: selectedTour.status,
+        } : undefined}
+        isEdit={true}
       />
     </div>
   );
