@@ -3,10 +3,13 @@ import { Button } from "./ui/button";
 import { ModeToggle } from "./mode-toggle";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
-import { User, LogOut } from "lucide-react";
+import { User, LogOut, Menu, X } from "lucide-react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Header() {
   const { user, logout } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -76,6 +79,16 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
+          {/* Menu hamburger para mobile */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="md:hidden"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+
           {user ? (
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 text-sm">
@@ -105,6 +118,142 @@ export default function Header() {
           <ModeToggle />
         </div>
       </div>
+
+      {/* Menu Mobile */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <>
+            {/* Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/20 z-40 md:hidden"
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+            
+            {/* Menu Slide */}
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed left-0 top-0 h-full w-80 bg-white/95 backdrop-blur-md z-50 md:hidden shadow-xl border-r"
+            >
+              <div className="p-6 h-full flex flex-col">
+                {/* Header do Menu */}
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center">
+                    <h1 className="text-xl font-bold text-blue-600">TURGUIDE</h1>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+
+                {/* Navegação */}
+                <nav className="flex-1 space-y-4">
+                  <button 
+                    onClick={() => {
+                      scrollToSection('roteiros');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full text-left py-3 px-4 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors font-medium"
+                  >
+                    🗺️ Roteiros
+                  </button>
+                  
+                  <button 
+                    onClick={() => {
+                      scrollToSection('destinos');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full text-left py-3 px-4 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors font-medium"
+                  >
+                    🏛️ Destinos
+                  </button>
+                  
+                  <button 
+                    onClick={() => {
+                      scrollToPasseios();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full text-left py-3 px-4 rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors font-medium"
+                  >
+                    🎯 Passeios
+                  </button>
+                  
+                  <button 
+                    onClick={() => {
+                      scrollToSection('diferenciais');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full text-left py-3 px-4 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors font-medium"
+                  >
+                    ⭐ Por que nos escolher
+                  </button>
+                  
+                  <button 
+                    onClick={() => {
+                      scrollToSection('contato');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full text-left py-3 px-4 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors font-medium"
+                  >
+                    📞 Contato
+                  </button>
+                </nav>
+
+                {/* Ações de Login/Cadastro na parte inferior */}
+                {!user && (
+                  <div className="border-t border-gray-200 pt-6 space-y-3">
+                    <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                      <Button variant="outline" className="w-full">
+                        Entrar
+                      </Button>
+                    </Link>
+                    <Link href="/register" onClick={() => setIsMobileMenuOpen(false)}>
+                      <Button className="w-full">
+                        Cadastrar
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+
+                {/* Informações do usuário logado */}
+                {user && (
+                  <div className="border-t border-gray-200 pt-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <User className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{user.nome}</p>
+                        <p className="text-sm text-gray-600 capitalize">{user.userType}</p>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      className="w-full" 
+                      onClick={() => {
+                        logout();
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sair
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </header>
   );
 }
