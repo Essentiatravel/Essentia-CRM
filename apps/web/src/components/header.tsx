@@ -89,7 +89,7 @@ export default function Header() {
             {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
 
-          {user ? (
+          {user && (
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 text-sm">
                 <User className="h-4 w-4" />
@@ -101,19 +101,6 @@ export default function Header() {
                 <span className="hidden sm:block ml-2">Sair</span>
               </Button>
             </div>
-          ) : (
-            <>
-              <Link href="/login">
-                <Button variant="outline" size="sm">
-                  Entrar
-                </Button>
-              </Link>
-              <Link href="/register">
-                <Button size="sm">
-                  Cadastrar
-                </Button>
-              </Link>
-            </>
           )}
           <ModeToggle />
         </div>
@@ -138,7 +125,7 @@ export default function Header() {
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed left-0 top-0 h-full w-80 bg-white/95 backdrop-blur-md z-50 md:hidden shadow-xl border-r"
+              className="fixed left-0 top-0 h-full w-80 bg-white z-50 md:hidden shadow-xl border-r"
             >
               <div className="p-6 h-full flex flex-col">
                 {/* Header do Menu */}
