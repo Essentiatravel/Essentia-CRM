@@ -15,6 +15,23 @@ export default function Header() {
     }
   };
 
+  const scrollToPasseios = () => {
+    const element = document.getElementById('destinos');
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+      // Aguardar um pouco e então activar os passeios
+      setTimeout(() => {
+        const buttons = document.querySelectorAll('button');
+        for (const button of buttons) {
+          if (button.textContent?.includes('Ver Passeios')) {
+            button.click();
+            break;
+          }
+        }
+      }, 500);
+    }
+  };
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b shadow-md">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
@@ -39,8 +56,8 @@ export default function Header() {
             Destinos
           </button>
           <button 
-            onClick={() => scrollToSection('destinos')}
-            className="text-muted-foreground hover:text-foreground transition-colors font-medium text-orange-500"
+            onClick={scrollToPasseios}
+            className="text-muted-foreground hover:text-foreground transition-colors font-medium text-orange-500 hover:text-orange-600"
           >
             Passeios
           </button>

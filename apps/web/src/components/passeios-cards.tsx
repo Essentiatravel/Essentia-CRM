@@ -48,8 +48,8 @@ export default function PasseiosCards({ destaque = false, limite }: PasseiosCard
         if (response.ok) {
           let data = await response.json();
           
-          // Filtrar apenas passeios ativos
-          data = data.filter((passeio: Passeio) => passeio.ativo === 1);
+          // Filtrar apenas passeios ativos (aceitar 1, true ou valores truthy)
+          data = data.filter((passeio: Passeio) => Boolean(passeio.ativo));
           
           // Limitar quantidade se especificado
           if (limite) {
@@ -140,32 +140,33 @@ export default function PasseiosCards({ destaque = false, limite }: PasseiosCard
       {passeios.map((passeio, index) => (
         <motion.div
           key={passeio.id}
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 30, scale: 0.9 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: index * 0.1 }}
-          whileHover={{ scale: 1.02 }}
-          className="transform transition-all duration-200"
+          transition={{ duration: 0.8, delay: index * 0.15, type: "spring", stiffness: 100 }}
+          whileHover={{ scale: 1.05, y: -8 }}
+          className="transform transition-all duration-300"
         >
-          <Card className="h-full hover:shadow-xl transition-shadow duration-300 overflow-hidden">
+          <Card className="h-full hover:shadow-2xl transition-all duration-300 overflow-hidden border-2 hover:border-orange-300 shadow-lg hover:shadow-orange-200/50">
             <CardContent className="p-0 h-full flex flex-col">
               {/* Imagem do passeio */}
               <div className="relative h-48 overflow-hidden">
                 <div className="absolute top-4 left-4 z-10 flex gap-2">
-                  <Badge className="bg-blue-600 text-white">
+                  <Badge className="bg-blue-600 text-white shadow-lg animate-pulse">
                     {passeio.categoria}
                   </Badge>
-                  <Badge variant="secondary" className="bg-green-600 text-white">
+                  <Badge variant="secondary" className="bg-green-600 text-white shadow-lg">
                     Disponível
                   </Badge>
                 </div>
                 <div className="absolute top-4 right-4 z-10">
-                  <Badge variant="secondary" className="bg-orange-500 text-white">
-                    Até 15% OFF
+                  <Badge variant="secondary" className="bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg animate-bounce">
+                    🔥 Até 15% OFF
                   </Badge>
                 </div>
-                <div className="w-full h-full bg-gradient-to-br from-blue-500 to-orange-400 flex items-center justify-center">
-                  <span className="text-6xl">🏛️</span>
+                <div className="w-full h-full bg-gradient-to-br from-blue-600 via-purple-600 to-orange-500 flex items-center justify-center relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/10 to-transparent"></div>
+                  <span className="text-6xl drop-shadow-2xl relative z-10">🏛️</span>
                 </div>
               </div>
 
@@ -217,10 +218,10 @@ export default function PasseiosCards({ destaque = false, limite }: PasseiosCard
                   
                   <Link href={`/passeio/${passeio.id}`}>
                     <Button 
-                      className="bg-orange-500 hover:bg-orange-600 text-white"
+                      className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 font-semibold"
                       size="sm"
                     >
-                      Ver Detalhes
+                      Ver Detalhes 🚀
                     </Button>
                   </Link>
                 </div>
