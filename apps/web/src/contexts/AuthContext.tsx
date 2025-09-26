@@ -47,21 +47,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const fetchUser = async () => {
       try {
-        // Fallback para localStorage primeiro (mais confiável no desenvolvimento)
+        // Tentar buscar usuário autenticado via API primeiro
+        const response = await fetch('/api/auth/user', {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          if (userData && userData.id) {
+            setUser(userData);
+            // Salvar no localStorage como backup
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('auth-user', JSON.stringify(userData));
+            }
+            return;
+          }
+        }
+        
+        // Se API falhou ou retornou 401, tentar localStorage como fallback
         if (typeof window !== 'undefined') {
           const localUser = localStorage.getItem('auth-user');
           if (localUser) {
             try {
               const userData = JSON.parse(localUser);
               setUser(userData);
+              return;
             } catch (e) {
               console.log('Invalid localStorage data');
               localStorage.removeItem('auth-user');
             }
           }
         }
+        
+        // Se nenhuma fonte tem usuário válido, usuário não está logado
+        setUser(null);
       } catch (error) {
         console.log('Error loading user:', error);
+        setUser(null);
       } finally {
         setLoading(false);
       }
