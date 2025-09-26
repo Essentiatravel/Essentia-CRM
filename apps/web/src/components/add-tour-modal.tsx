@@ -86,6 +86,8 @@ export default function AddTourModal({ isOpen, onClose, onSubmit }: AddTourModal
     }));
   };
 
+  const [uploadingImage, setUploadingImage] = useState(false);
+
   const addImage = () => {
     if (newImage.trim()) {
       setFormData(prev => ({
@@ -94,6 +96,44 @@ export default function AddTourModal({ isOpen, onClose, onSubmit }: AddTourModal
       }));
       setNewImage("");
     }
+  };
+
+  const uploadImage = async (file: File) => {
+    setUploadingImage(true);
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append('file', file);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formDataUpload,
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setFormData(prev => ({
+          ...prev,
+          images: [...prev.images, result.url]
+        }));
+      } else {
+        alert(result.error || 'Erro no upload da imagem');
+      }
+    } catch (error) {
+      console.error('Erro no upload:', error);
+      alert('Erro no upload da imagem');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      uploadImage(file);
+    }
+    // Resetar o valor para permitir selecionar o mesmo arquivo novamente
+    event.target.value = '';
   };
 
   const removeImage = (index: number) => {
@@ -275,9 +315,51 @@ export default function AddTourModal({ isOpen, onClose, onSubmit }: AddTourModal
 
           <div className="space-y-3">
             <div>
-              <Label className="text-sm font-medium text-gray-700">Imagens (URLs)</Label>
-              <p className="text-xs text-gray-500 mt-1">Links para imagens do passeio</p>
+              <Label className="text-sm font-medium text-gray-700">Imagens do Passeio</Label>
+              <p className="text-xs text-gray-500 mt-1">Faça upload das imagens ou adicione URLs</p>
             </div>
+            
+            {/* Upload de arquivo */}
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="hidden"
+                id="image-upload"
+                disabled={uploadingImage}
+              />
+              <label 
+                htmlFor="image-upload" 
+                className={`cursor-pointer flex flex-col items-center gap-2 ${uploadingImage ? 'opacity-50' : 'hover:text-blue-600'}`}
+              >
+                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                  {uploadingImage ? (
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  ) : (
+                    <Plus className="h-6 w-6 text-gray-400" />
+                  )}
+                </div>
+                <div className="text-sm">
+                  <span className="font-medium text-blue-600">
+                    {uploadingImage ? 'Enviando...' : 'Clique para fazer upload'}
+                  </span>
+                  <span className="text-gray-500"> ou arraste uma imagem aqui</span>
+                </div>
+                <p className="text-xs text-gray-400">PNG, JPG, JPEG até 5MB</p>
+              </label>
+            </div>
+
+            {/* Ou adicionar URL manual */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200"></div>
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="bg-white px-2 text-gray-500">ou adicione uma URL</span>
+              </div>
+            </div>
+
             <div className="flex gap-2 mb-2">
               <Input
                 placeholder="https://exemplo.com/imagem.jpg"
@@ -290,20 +372,42 @@ export default function AddTourModal({ isOpen, onClose, onSubmit }: AddTourModal
                 Adicionar
               </Button>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {formData.images.map((image, index) => (
-                <div key={index} className="bg-purple-50 border border-purple-200 text-purple-700 px-3 py-1.5 rounded-lg flex items-center gap-2 hover:bg-purple-100 transition-colors">
-                  <span className="text-sm font-medium">{image}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeImage(index)}
-                    className="text-purple-500 hover:text-purple-700 transition-colors"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
+            
+            {/* Lista de imagens adicionadas */}
+            {formData.images.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-700">Imagens adicionadas:</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {formData.images.map((image, index) => (
+                    <div key={index} className="bg-purple-50 border border-purple-200 rounded-lg p-3 flex items-center justify-between hover:bg-purple-100 transition-colors">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        {/* Preview da imagem */}
+                        <div className="w-10 h-10 bg-gray-200 rounded-md overflow-hidden flex-shrink-0">
+                          <img 
+                            src={image} 
+                            alt="Preview" 
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                        <span className="text-sm text-purple-700 truncate font-medium">
+                          {image.length > 40 ? `${image.substring(0, 40)}...` : image}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="text-purple-500 hover:text-purple-700 transition-colors flex-shrink-0 ml-2"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
           </div>
 
           <div>

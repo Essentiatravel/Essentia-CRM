@@ -29,6 +29,7 @@
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.44.5",
     "express-session": "^1.18.2",
+    "file-type": "^21.0.0",
     "memoizee": "^0.4.17",
     "openid-client": "^6.8.0",
     "passport": "^0.7.0",
