@@ -25,16 +25,17 @@ interface PasseiosCardsProps {
   limite?: number;
 }
 
-// Imagens de exemplo para os passeios
-const imagensPasseios: { [key: string]: string } = {
-  "História": "/api/placeholder/400/300",
-  "Histórico": "/api/placeholder/400/300", 
-  "Religioso": "/api/placeholder/400/300",
-  "Natureza": "/api/placeholder/400/300",
-  "Gastronomia": "/api/placeholder/400/300",
-  "Romântico": "/api/placeholder/400/300",
-  "Cultural": "/api/placeholder/400/300",
-  "Aventura": "/api/placeholder/400/300"
+// Emojis para categorias de passeios (fallback quando não há imagens)
+const emojisPorCategoria: { [key: string]: string } = {
+  "História": "🏛️",
+  "Histórico": "🏛️", 
+  "Religioso": "⛪",
+  "Natureza": "🌲",
+  "Gastronomia": "🍽️",
+  "Romântico": "💕",
+  "Cultural": "🎨",
+  "Aventura": "🧗",
+  "Arte": "🎨"
 };
 
 export default function PasseiosCards({ destaque = false, limite }: PasseiosCardsProps) {
@@ -208,10 +209,11 @@ export default function PasseiosCards({ destaque = false, limite }: PasseiosCard
                     );
                   } else {
                     // Fallback para emoji se não houver imagem
+                    const emoji = emojisPorCategoria[passeio.categoria] || "🏛️";
                     return (
                       <div className="w-full h-full bg-gradient-to-br from-blue-600 via-purple-600 to-orange-500 flex items-center justify-center relative overflow-hidden">
                         <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/10 to-transparent"></div>
-                        <span className="text-6xl drop-shadow-2xl relative z-10">🏛️</span>
+                        <span className="text-6xl drop-shadow-2xl relative z-10">{emoji}</span>
                       </div>
                     );
                   }

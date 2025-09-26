@@ -7,8 +7,22 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
-    domains: ['localhost'],
+    domains: ['localhost', 'images.unsplash.com', 'via.placeholder.com'],
     unoptimized: false,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'via.placeholder.com',
+        port: '',
+        pathname: '/**',
+      },
+    ],
   },
   async headers() {
     return [
