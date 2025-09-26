@@ -8,7 +8,7 @@ export interface User {
   id: string;
   email: string;
   nome: string;
-  userType: 'admin' | 'guia' | 'cliente';
+  user_type: 'admin' | 'guia' | 'cliente';
   telefone?: string;
   endereco?: string;
   data_nascimento?: string;
@@ -22,7 +22,7 @@ export interface User {
 export async function createUser(userData: {
   email: string;
   nome: string;
-  userType: 'admin' | 'guia' | 'cliente';
+  user_type: 'admin' | 'guia' | 'cliente';
   senha: string;
   telefone?: string;
   endereco?: string;
@@ -31,7 +31,7 @@ export async function createUser(userData: {
   try {
     console.log('Criando usuário com dados:', { ...userData, senha: '[HIDDEN]' });
 
-    const { email, nome, userType, senha, telefone, endereco, cpf } = userData;
+    const { email, nome, user_type, senha, telefone, endereco, cpf } = userData;
 
     // Gerar hash da senha
     const saltRounds = 10;
@@ -44,9 +44,9 @@ export async function createUser(userData: {
 
     const result = await sql`
       INSERT INTO users (
-        id, email, nome, "userType", password_hash, telefone, endereco, cpf, "createdAt", "updatedAt"
+        id, email, nome, user_type, password_hash, telefone, endereco, cpf, "createdAt", "updatedAt"
       ) VALUES (
-        ${id}, ${email}, ${nome}, ${userType}, ${password_hash}, ${telefone || null}, ${endereco || null}, ${cpf || null}, NOW(), NOW()
+        ${id}, ${email}, ${nome}, ${user_type}, ${password_hash}, ${telefone || null}, ${endereco || null}, ${cpf || null}, NOW(), NOW()
       ) RETURNING *
     `;
 

@@ -55,12 +55,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar se o usuário é admin no banco (não no cookie)
-    if (dbUser.userType !== 'admin') {
+    if (dbUser.user_type !== 'admin') {
+      console.log('🚫 Acesso negado - Usuário não é admin:', userEmail, 'tipo:', dbUser.user_type);
       return NextResponse.json(
         { error: 'Acesso negado. Apenas administradores podem fazer upload de imagens.' },
         { status: 403 }
       );
     }
+    
+    console.log('✅ Usuário admin autenticado:', userEmail);
 
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
