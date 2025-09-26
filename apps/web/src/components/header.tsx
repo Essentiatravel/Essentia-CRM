@@ -39,6 +39,12 @@ export default function Header() {
             Destinos
           </button>
           <button 
+            onClick={() => scrollToSection('destinos')}
+            className="text-muted-foreground hover:text-foreground transition-colors font-medium text-orange-500"
+          >
+            Passeios
+          </button>
+          <button 
             onClick={() => scrollToSection('diferenciais')}
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
