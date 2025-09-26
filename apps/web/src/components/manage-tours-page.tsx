@@ -326,6 +326,27 @@ export default function ManageToursPage() {
         const passeioData = await response.json();
         
         // Formatar dados para o modal
+        // Função helper para fazer parsing seguro de JSON
+        const safeJsonParse = (value: any, fallback: any[] = []) => {
+          if (!value) return fallback;
+          try {
+            if (typeof value === 'string') {
+              return JSON.parse(value);
+            }
+            if (Array.isArray(value)) {
+              return value;
+            }
+            return fallback;
+          } catch (error) {
+            console.warn('Erro ao fazer parse JSON:', value, error);
+            // Se falhar o parse e for string, tenta separar por vírgula
+            if (typeof value === 'string') {
+              return value.split(',').map(item => item.trim()).filter(item => item);
+            }
+            return fallback;
+          }
+        };
+
         const formattedTour: Tour = {
           id: passeioData.id,
           name: passeioData.nome,
@@ -336,9 +357,9 @@ export default function ManageToursPage() {
           type: passeioData.categoria,
           description: passeioData.descricao || '',
           maxPeople: passeioData.capacidadeMaxima || 10,
-          languages: passeioData.idiomas ? JSON.parse(passeioData.idiomas) : [],
-          includedItems: passeioData.inclusoes ? JSON.parse(passeioData.inclusoes) : [],
-          images: passeioData.imagens ? JSON.parse(passeioData.imagens) : [],
+          languages: safeJsonParse(passeioData.idiomas, []),
+          includedItems: safeJsonParse(passeioData.inclusoes, []),
+          images: safeJsonParse(passeioData.imagens, []),
           specialRequirements: passeioData.requisitosEspeciais || '',
         };
         
