@@ -89,9 +89,9 @@ export async function validateUserPassword(email: string, password: string): Pro
 
 export async function getAllUsers(): Promise<User[]> {
   const result = await sql`
-    SELECT id, email, nome, "userType", telefone, endereco, cpf, "createdAt", "updatedAt"
+    SELECT id, email, nome, user_type as "userType", telefone, endereco, cpf, created_at as "createdAt", updated_at as "updatedAt"
     FROM users 
-    ORDER BY "createdAt" DESC
+    ORDER BY created_at DESC
   `;
 
   return result as User[];
