@@ -7,7 +7,7 @@ import { fileTypeFromBuffer } from 'file-type';
 
 export async function POST(request: NextRequest) {
   try {
-    // Verificar autenticação
+    // Verificar autenticação usando sistema existente mas com validação server-side
     const sessionCookie = request.cookies.get('auth-session');
     
     if (!sessionCookie) {
@@ -17,38 +17,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validar dados da sessão
+    let sessionData;
     try {
-      const sessionData = JSON.parse(sessionCookie.value);
-      
-      // Verificar se a sessão ainda é válida
-      const now = Math.floor(Date.now() / 1000);
-      if (sessionData.expires_at && now > sessionData.expires_at) {
-        return NextResponse.json(
-          { error: 'Sessão expirada. Faça login novamente.' },
-          { status: 401 }
-        );
-      }
-
-      // Verificar usuário no banco de dados (não confiar apenas no cookie)
-      const userEmail = sessionData.user?.email;
-      if (!userEmail) {
-        return NextResponse.json(
-          { error: 'Dados de usuário inválidos na sessão.' },
-          { status: 401 }
-        );
-      }
-
-      const dbUser = await getUserByEmail(userEmail);
-      if (!dbUser || dbUser.user_type !== 'admin') {
-        return NextResponse.json(
-          { error: 'Acesso negado. Apenas administradores podem fazer upload de imagens.' },
-          { status: 403 }
-        );
-      }
-    } catch (sessionError) {
+      sessionData = JSON.parse(sessionCookie.value);
+    } catch (error) {
       return NextResponse.json(
         { error: 'Sessão inválida. Faça login novamente.' },
         { status: 401 }
+      );
+    }
+
+    // Verificar se a sessão não expirou
+    const now = Math.floor(Date.now() / 1000);
+    if (sessionData.expires_at && now > sessionData.expires_at) {
+      return NextResponse.json(
+        { error: 'Sessão expirada. Faça login novamente.' },
+        { status: 401 }
+      );
+    }
+
+    // VALIDAÇÃO CRÍTICA: Verificar usuário real no banco de dados
+    const userEmail = sessionData.user?.email;
+    if (!userEmail) {
+      return NextResponse.json(
+        { error: 'Dados de usuário inválidos na sessão.' },
+        { status: 401 }
+      );
+    }
+
+    const dbUser = await getUserByEmail(userEmail);
+    if (!dbUser) {
+      return NextResponse.json(
+        { error: 'Usuário não encontrado no banco de dados.' },
+        { status: 401 }
+      );
+    }
+
+    // Verificar se o usuário é admin no banco (não no cookie)
+    if (dbUser.userType !== 'admin') {
+      return NextResponse.json(
+        { error: 'Acesso negado. Apenas administradores podem fazer upload de imagens.' },
+        { status: 403 }
       );
     }
 

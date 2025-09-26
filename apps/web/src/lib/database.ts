@@ -1,5 +1,6 @@
 import { neon } from '@neondatabase/serverless';
 import bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
 
 const sql = neon(process.env.DATABASE_URL!);
 
@@ -164,4 +165,70 @@ export async function getUserStats() {
     totalGuias: parseInt(stats[0].guias),
     totalClientes: parseInt(stats[0].clientes)
   };
+}
+
+// Funções para gerenciar sessões de forma segura
+export async function createSession(userId: string, userEmail: string) {
+  const sessionId = randomUUID();
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 dias
+  
+  const sessionData = {
+    userId,
+    userEmail,
+    createdAt: new Date().toISOString(),
+    expiresAt: expiresAt.toISOString()
+  };
+
+  await sql`
+    INSERT INTO sessions (sid, sess, expire)
+    VALUES (${sessionId}, ${JSON.stringify(sessionData)}, ${expiresAt})
+    ON CONFLICT (sid) DO UPDATE SET
+      sess = EXCLUDED.sess,
+      expire = EXCLUDED.expire
+  `;
+
+  return sessionId;
+}
+
+export async function validateSession(sessionId: string) {
+  if (!sessionId) {
+    return null;
+  }
+
+  const result = await sql`
+    SELECT * FROM sessions 
+    WHERE sid = ${sessionId} AND expire > NOW()
+  `;
+
+  if (result.length === 0) {
+    // Limpar sessões expiradas
+    await sql`DELETE FROM sessions WHERE sid = ${sessionId}`;
+    return null;
+  }
+
+  const session = result[0];
+  
+  // Parse do JSON da sessão
+  let sessionData;
+  try {
+    sessionData = typeof session.sess === 'string' ? JSON.parse(session.sess) : session.sess;
+  } catch (error) {
+    console.error('Erro ao fazer parse da sessão:', error);
+    return null;
+  }
+  
+  return sessionData as { userId: string, userEmail: string, createdAt: string, expiresAt: string };
+}
+
+export async function deleteSession(sessionId: string) {
+  await sql`DELETE FROM sessions WHERE sid = ${sessionId}`;
+}
+
+export async function getUserFromSession(sessionId: string): Promise<User | null> {
+  const sessionData = await validateSession(sessionId);
+  if (!sessionData) {
+    return null;
+  }
+
+  return await getUserByEmail(sessionData.userEmail);
 }
