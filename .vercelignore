@@ -1,0 +1,8 @@
+node_modules
+.git
+.env.local
+.env.production.local
+.next/cache
+dist
+apps/server
+packages

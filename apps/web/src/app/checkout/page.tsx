@@ -332,7 +332,7 @@ export default function Checkout() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline">{bookingData.tipoReserva}</Badge>
-                      {desconto > 0 && <Badge className="bg-green-600">10% OFF</Badge>}
+                      {bookingData.desconto > 0 && <Badge className="bg-green-600">10% OFF</Badge>}
                     </div>
                   </div>
                 </div>
