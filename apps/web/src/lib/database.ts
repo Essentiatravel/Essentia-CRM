@@ -125,14 +125,14 @@ export async function updateUser(id: string, userData: Partial<User>): Promise<U
       SET 
         nome = COALESCE(${updateData.nome}, nome),
         email = COALESCE(${updateData.email}, email),
-        "userType" = COALESCE(${updateData.userType}, "userType"),
+        user_type = COALESCE(${updateData.userType}, user_type),
         password_hash = COALESCE(${updateData.password_hash}, password_hash),
         telefone = COALESCE(${updateData.telefone}, telefone),
         endereco = COALESCE(${updateData.endereco}, endereco),
         cpf = COALESCE(${updateData.cpf}, cpf),
-        "updatedAt" = ${updateData.updatedAt}
+        updated_at = ${updateData.updatedAt}
       WHERE id = ${id}
-      RETURNING id, email, nome, "userType", telefone, endereco, cpf, "createdAt", "updatedAt"
+      RETURNING id, email, nome, user_type as "userType", telefone, endereco, cpf, created_at as "createdAt", updated_at as "updatedAt"
     `;
     
     console.log('Usuário atualizado:', result[0]);
@@ -153,9 +153,9 @@ export async function getUserStats() {
   const stats = await sql`
     SELECT 
       COUNT(*) as total,
-      COUNT(CASE WHEN "userType" = 'admin' THEN 1 END) as admins,
-      COUNT(CASE WHEN "userType" = 'guia' THEN 1 END) as guias,
-      COUNT(CASE WHEN "userType" = 'cliente' THEN 1 END) as clientes
+      COUNT(CASE WHEN user_type = 'admin' THEN 1 END) as admins,
+      COUNT(CASE WHEN user_type = 'guia' THEN 1 END) as guias,
+      COUNT(CASE WHEN user_type = 'cliente' THEN 1 END) as clientes
     FROM users
   `;
 
