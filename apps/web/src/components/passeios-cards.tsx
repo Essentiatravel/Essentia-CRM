@@ -165,14 +165,26 @@ export default function PasseiosCards({ destaque = false, limite }: PasseiosCard
                   </Badge>
                 </div>
                 {(() => {
-                  // Parse imagens do passeio
+                  // Parse imagens do passeio - parsing robusto
                   let imagensArray: string[] = [];
-                  try {
-                    if (passeio.imagens) {
-                      imagensArray = JSON.parse(passeio.imagens);
+                  
+                  if (passeio.imagens) {
+                    try {
+                      // Se já é array, usa diretamente
+                      if (Array.isArray(passeio.imagens)) {
+                        imagensArray = passeio.imagens;
+                      } 
+                      // Se é string, tenta fazer parse
+                      else if (typeof passeio.imagens === 'string') {
+                        imagensArray = JSON.parse(passeio.imagens);
+                      }
+                    } catch (error) {
+                      console.warn('Erro ao fazer parse das imagens:', passeio.imagens, error);
+                      // Fallback: se é string simples, coloca em array
+                      if (typeof passeio.imagens === 'string' && passeio.imagens.startsWith('/')) {
+                        imagensArray = [passeio.imagens];
+                      }
                     }
-                  } catch (error) {
-                    console.warn('Erro ao fazer parse das imagens:', error);
                   }
 
                   const primeiraImagem = imagensArray && imagensArray.length > 0 ? imagensArray[0] : null;
