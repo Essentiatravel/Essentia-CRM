@@ -59,7 +59,7 @@ npm run dev:web
    - **Output Directory**: `.next`
    - **Install Command**: `npm install`
 
-   ⚠️ **ATENÇÃO**: A Vercel detecta automaticamente o Turbo e pode tentar ajustar os comandos. Se der erro, vá em **Settings** → **General** e configure estes valores exatamente como acima.
+   ⚠️ **ATENÇÃO**: Certifique-se de que o Root Directory está definido como `apps/web`. A Vercel deve detectar automaticamente Next.js e usar os comandos corretos.
 
 ### Opção B: Deploy via CLI
 
