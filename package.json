@@ -6,12 +6,12 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "turbo build",
-    "dev": "turbo dev",
-    "dev:web": "turbo -F web dev",
-    "dev:server": "turbo -F server dev",
-    "lint": "turbo lint",
-    "type-check": "turbo type-check",
+    "build": "npm run build --workspace=web",
+    "dev": "npm run dev --workspace=web",
+    "dev:web": "npm run dev --workspace=web",
+    "dev:server": "npm run dev --workspace=server",
+    "lint": "npm run lint --workspace=web",
+    "type-check": "npm run type-check --workspace=web",
     "db:push": "cd apps/server && npm run db:push",
     "db:studio": "cd apps/server && npm run db:studio",
     "db:seed": "cd apps/server && npm run db:seed"
@@ -37,9 +37,6 @@
     "postgres": "^3.4.7",
     "react-day-picker": "^9.11.0",
     "ws": "^8.18.3"
-  },
-  "devDependencies": {
-    "turbo": "^2.5.4"
   },
   "packageManager": "npm@10.9.2"
 }
