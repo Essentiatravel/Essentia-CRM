@@ -24,6 +24,10 @@
 - [Licença](#-licença)
 - [Contato](#-contato)
 
+> ℹ️ **Dica rápida para a Vercel:** se o dashboard continuar apontando para um commit antigo,
+> use o botão `Redeploy ▾ → Redeploy with latest commit` na branch `main` para forçar a
+> plataforma a usar o código mais recente.
+
 ## 🎯 Sobre o Projeto
 
 O **TourGuide CRM** é uma plataforma completa para gestão de empresas de turismo, desenvolvida para otimizar operações, maximizar receitas e oferecer experiências excepcionais aos clientes. O sistema centraliza todas as operações através de uma interface moderna e intuitiva.
