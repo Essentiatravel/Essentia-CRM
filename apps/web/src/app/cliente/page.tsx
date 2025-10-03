@@ -10,6 +10,16 @@ import { User, Calendar, MapPin, Phone, Mail } from 'lucide-react';
 export default function ClienteDashboard() {
   const { user, logout } = useAuth();
 
+  if (!user) {
+    return (
+      <ProtectedRoute allowedTypes={['cliente']}>
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <p className="text-gray-600">Carregando dados do cliente...</p>
+        </div>
+      </ProtectedRoute>
+    );
+  }
+
   return (
     <ProtectedRoute allowedTypes={['cliente']}>
       <div className="min-h-screen bg-gray-50">
