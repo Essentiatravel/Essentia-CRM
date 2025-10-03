@@ -31,7 +31,8 @@
       "Bash(git remote add:*)",
       "Bash(git push:*)",
       "Bash(npm install)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": []

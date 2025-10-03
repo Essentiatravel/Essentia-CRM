@@ -5,11 +5,12 @@ import {
   deleteAgendamento,
 } from '@/lib/agendamentos-service';
 
-interface RouteParams {
-  params: { id: string };
-}
+type RouteContext = {
+  params: Promise<{ id: string }>;
+};
 
-export async function GET(_: NextRequest, { params }: RouteParams) {
+export async function GET(_: NextRequest, context: RouteContext) {
+  const params = await context.params;
   try {
     const agendamento = await getAgendamentoById(params.id);
 
@@ -24,7 +25,8 @@ export async function GET(_: NextRequest, { params }: RouteParams) {
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: RouteParams) {
+export async function PATCH(request: NextRequest, context: RouteContext) {
+  const params = await context.params;
   try {
     const body = await request.json();
 
@@ -65,7 +67,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-export async function DELETE(_: NextRequest, { params }: RouteParams) {
+export async function DELETE(_: NextRequest, context: RouteContext) {
+  const params = await context.params;
   try {
     const removed = await deleteAgendamento(params.id);
 
