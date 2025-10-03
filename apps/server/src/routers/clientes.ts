@@ -4,6 +4,18 @@ import { db } from "../db";
 import { clientes } from "../db/schema";
 import { publicProcedure, router } from "../lib/trpc";
 
+// Helper function for safe JSON parsing
+function safeJsonParse<T>(value: string | unknown, fallback: T): T {
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value) as T;
+    } catch {
+      return fallback;
+    }
+  }
+  return fallback;
+}
+
 const clienteSchema = z.object({
   nome: z.string().min(1),
   email: z.string().email(),
@@ -27,8 +39,8 @@ export const clientesRouter = router({
     const result = await db.select().from(clientes).where(eq(clientes.status, "ativo"));
     return result.map(cliente => ({
       ...cliente,
-      endereco: cliente.endereco ? JSON.parse(cliente.endereco) : null,
-      preferencias: cliente.preferencias ? JSON.parse(cliente.preferencias) : [],
+      endereco: safeJsonParse(cliente.endereco, null),
+      preferencias: safeJsonParse(cliente.preferencias, []),
     }));
   }),
 
@@ -42,8 +54,8 @@ export const clientesRouter = router({
       const cliente = result[0];
       return {
         ...cliente,
-        endereco: cliente.endereco ? JSON.parse(cliente.endereco) : null,
-        preferencias: cliente.preferencias ? JSON.parse(cliente.preferencias) : [],
+        endereco: safeJsonParse(cliente.endereco, null),
+        preferencias: safeJsonParse(cliente.preferencias, []),
       };
     }),
 
@@ -74,7 +86,7 @@ export const clientesRouter = router({
         ...input.data,
         endereco: input.data.endereco ? JSON.stringify(input.data.endereco) : undefined,
         preferencias: input.data.preferencias ? JSON.stringify(input.data.preferencias) : undefined,
-        atualizadoEm: new Date().toISOString(),
+        atualizadoEm: new Date(),
       };
 
       await db.update(clientes).set(updateData).where(eq(clientes.id, input.id));
@@ -87,7 +99,7 @@ export const clientesRouter = router({
     .mutation(async ({ input }) => {
       await db.update(clientes).set({ 
         status: "inativo",
-        atualizadoEm: new Date().toISOString(),
+        atualizadoEm: new Date(),
       }).where(eq(clientes.id, input.id));
       return { success: true };
     }),
@@ -102,8 +114,8 @@ export const clientesRouter = router({
       const cliente = result[0];
       return {
         ...cliente,
-        endereco: cliente.endereco ? JSON.parse(cliente.endereco) : null,
-        preferencias: cliente.preferencias ? JSON.parse(cliente.preferencias) : [],
+        endereco: safeJsonParse(cliente.endereco, null),
+        preferencias: safeJsonParse(cliente.preferencias, []),
       };
     }),
 });

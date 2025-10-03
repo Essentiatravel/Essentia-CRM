@@ -136,7 +136,7 @@ const CalendarioGlobal: React.FC = () => {
           setAgendamentos([]);
         }
       } catch (error) {
-        if (error.name === 'AbortError') {
+        if (error instanceof Error && error.name === 'AbortError') {
           console.error('Timeout ao carregar agendamentos do calendário');
         } else {
           console.error('Erro ao carregar agendamentos:', error);

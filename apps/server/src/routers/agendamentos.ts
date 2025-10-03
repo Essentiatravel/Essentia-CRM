@@ -145,7 +145,7 @@ export const agendamentosRouter = router({
     .mutation(async ({ input }) => {
       await db.update(agendamentos).set({
         status: input.status,
-        atualizadoEm: new Date().toISOString(),
+        atualizadoEm: new Date(),
       }).where(eq(agendamentos.id, input.id));
 
       return { success: true };
@@ -163,7 +163,7 @@ export const agendamentosRouter = router({
         valorComissao: input.data.valorTotal && input.data.percentualComissao 
           ? input.data.valorTotal * (input.data.percentualComissao / 100)
           : undefined,
-        atualizadoEm: new Date().toISOString(),
+        atualizadoEm: new Date(),
       };
 
       await db.update(agendamentos).set(updateData).where(eq(agendamentos.id, input.id));
@@ -179,7 +179,7 @@ export const agendamentosRouter = router({
     .mutation(async ({ input }) => {
       await db.update(agendamentos).set({
         guiaId: input.guiaId,
-        atualizadoEm: new Date().toISOString(),
+        atualizadoEm: new Date(),
       }).where(eq(agendamentos.id, input.id));
 
       return { success: true };
@@ -195,7 +195,7 @@ export const agendamentosRouter = router({
       await db.update(agendamentos).set({
         status: "canceladas",
         motivoCancelamento: input.motivo,
-        atualizadoEm: new Date().toISOString(),
+        atualizadoEm: new Date(),
       }).where(eq(agendamentos.id, input.id));
 
       return { success: true };
@@ -212,7 +212,7 @@ export const agendamentosRouter = router({
       await db.update(agendamentos).set({
         avaliacaoCliente: input.avaliacao,
         comentarioCliente: input.comentario,
-        atualizadoEm: new Date().toISOString(),
+        atualizadoEm: new Date(),
       }).where(eq(agendamentos.id, input.id));
 
       return { success: true };

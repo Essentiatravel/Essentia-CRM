@@ -4,6 +4,18 @@ import { db } from "../db";
 import { passeios } from "../db/schema";
 import { publicProcedure, router } from "../lib/trpc";
 
+// Helper function for safe JSON parsing
+function safeJsonParse<T>(value: string | unknown, fallback: T): T {
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value) as T;
+    } catch {
+      return fallback;
+    }
+  }
+  return fallback;
+}
+
 const passeioSchema = z.object({
   nome: z.string().min(1),
   descricao: z.string().min(1),
@@ -19,12 +31,12 @@ const passeioSchema = z.object({
 export const passeiosRouter = router({
   // Listar todos os passeios
   list: publicProcedure.query(async () => {
-    const result = await db.select().from(passeios).where(eq(passeios.ativo, true));
+    const result = await db.select().from(passeios).where(eq(passeios.ativo, 1));
     return result.map(passeio => ({
       ...passeio,
-      imagens: passeio.imagens ? JSON.parse(passeio.imagens) : [],
-      inclusoes: passeio.inclusoes ? JSON.parse(passeio.inclusoes) : [],
-      idiomas: passeio.idiomas ? JSON.parse(passeio.idiomas) : [],
+      imagens: safeJsonParse(passeio.imagens, []),
+      inclusoes: safeJsonParse(passeio.inclusoes, []),
+      idiomas: safeJsonParse(passeio.idiomas, []),
     }));
   }),
 
@@ -38,9 +50,9 @@ export const passeiosRouter = router({
       const passeio = result[0];
       return {
         ...passeio,
-        imagens: passeio.imagens ? JSON.parse(passeio.imagens) : [],
-        inclusoes: passeio.inclusoes ? JSON.parse(passeio.inclusoes) : [],
-        idiomas: passeio.idiomas ? JSON.parse(passeio.idiomas) : [],
+        imagens: safeJsonParse(passeio.imagens, []),
+        inclusoes: safeJsonParse(passeio.inclusoes, []),
+        idiomas: safeJsonParse(passeio.idiomas, []),
       };
     }),
 
@@ -73,7 +85,7 @@ export const passeiosRouter = router({
         imagens: input.data.imagens ? JSON.stringify(input.data.imagens) : undefined,
         inclusoes: input.data.inclusoes ? JSON.stringify(input.data.inclusoes) : undefined,
         idiomas: input.data.idiomas ? JSON.stringify(input.data.idiomas) : undefined,
-        atualizadoEm: new Date().toISOString(),
+        atualizadoEm: new Date(),
       };
 
       await db.update(passeios).set(updateData).where(eq(passeios.id, input.id));
@@ -84,9 +96,9 @@ export const passeiosRouter = router({
   delete: publicProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
-      await db.update(passeios).set({ 
-        ativo: false,
-        atualizadoEm: new Date().toISOString(),
+      await db.update(passeios).set({
+        ativo: 0,
+        atualizadoEm: new Date(),
       }).where(eq(passeios.id, input.id));
       return { success: true };
     }),

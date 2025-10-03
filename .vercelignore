@@ -1,8 +1,44 @@
-node_modules
-.git
-.env.local
-.env.production.local
-.next/cache
-dist
+# Apps não relacionados ao deploy
 apps/server
+
+# Node modules
+node_modules
+**/node_modules
+
+# Build outputs e cache
+.next/cache
+.turbo
+dist
+
+# Environment files
+.env
+.env.local
+.env*.local
+.env.production.local
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Logs
+logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tests
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# Packages não necessários no build
 packages

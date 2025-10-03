@@ -4,6 +4,18 @@ import { db } from "../db";
 import { guias } from "../db/schema";
 import { publicProcedure, router } from "../lib/trpc";
 
+// Helper function for safe JSON parsing
+function safeJsonParse<T>(value: string | unknown, fallback: T): T {
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value) as T;
+    } catch {
+      return fallback;
+    }
+  }
+  return fallback;
+}
+
 const guiaSchema = z.object({
   nome: z.string().min(1),
   email: z.string().email(),
@@ -22,8 +34,8 @@ export const guiasRouter = router({
     const result = await db.select().from(guias);
     return result.map(guia => ({
       ...guia,
-      especialidades: guia.especialidades ? JSON.parse(guia.especialidades) : [],
-      idiomas: guia.idiomas ? JSON.parse(guia.idiomas) : [],
+      especialidades: safeJsonParse(guia.especialidades, []),
+      idiomas: safeJsonParse(guia.idiomas, []),
     }));
   }),
 
@@ -32,8 +44,8 @@ export const guiasRouter = router({
     const result = await db.select().from(guias).where(eq(guias.status, "ativo"));
     return result.map(guia => ({
       ...guia,
-      especialidades: guia.especialidades ? JSON.parse(guia.especialidades) : [],
-      idiomas: guia.idiomas ? JSON.parse(guia.idiomas) : [],
+      especialidades: safeJsonParse(guia.especialidades, []),
+      idiomas: safeJsonParse(guia.idiomas, []),
     }));
   }),
 
@@ -47,8 +59,8 @@ export const guiasRouter = router({
       const guia = result[0];
       return {
         ...guia,
-        especialidades: guia.especialidades ? JSON.parse(guia.especialidades) : [],
-        idiomas: guia.idiomas ? JSON.parse(guia.idiomas) : [],
+        especialidades: safeJsonParse(guia.especialidades, []),
+        idiomas: safeJsonParse(guia.idiomas, []),
       };
     }),
 
@@ -62,7 +74,7 @@ export const guiasRouter = router({
         ...input,
         especialidades: JSON.stringify(input.especialidades),
         idiomas: JSON.stringify(input.idiomas),
-        dataRegistro: new Date().toISOString(),
+        dataRegistro: new Date(),
       };
 
       await db.insert(guias).values(novoGuia);
@@ -80,7 +92,7 @@ export const guiasRouter = router({
         ...input.data,
         especialidades: input.data.especialidades ? JSON.stringify(input.data.especialidades) : undefined,
         idiomas: input.data.idiomas ? JSON.stringify(input.data.idiomas) : undefined,
-        atualizadoEm: new Date().toISOString(),
+        atualizadoEm: new Date(),
       };
 
       await db.update(guias).set(updateData).where(eq(guias.id, input.id));
@@ -96,7 +108,7 @@ export const guiasRouter = router({
     .mutation(async ({ input }) => {
       await db.update(guias).set({ 
         status: input.status,
-        atualizadoEm: new Date().toISOString(),
+        atualizadoEm: new Date(),
       }).where(eq(guias.id, input.id));
       return { success: true };
     }),
@@ -123,7 +135,7 @@ export const guiasRouter = router({
         totalAvaliacoes,
         passeiosRealizados: (guiaAtual.passeiosRealizados || 0) + 1,
         comissaoTotal: (guiaAtual.comissaoTotal || 0) + input.comissaoNova,
-        atualizadoEm: new Date().toISOString(),
+        atualizadoEm: new Date(),
       }).where(eq(guias.id, input.id));
 
       return { success: true };
@@ -135,7 +147,7 @@ export const guiasRouter = router({
     .mutation(async ({ input }) => {
       await db.update(guias).set({ 
         status: "inativo",
-        atualizadoEm: new Date().toISOString(),
+        atualizadoEm: new Date(),
       }).where(eq(guias.id, input.id));
       return { success: true };
     }),

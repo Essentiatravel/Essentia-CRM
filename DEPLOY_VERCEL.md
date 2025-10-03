@@ -1,6 +1,6 @@
-# 🚀 Deploy na Vercel - EssentiaCRM
+# 🚀 Deploy na Vercel - TurGuide
 
-Guia completo para fazer deploy do projeto na Vercel.
+Guia completo para fazer deploy do projeto TurGuide na Vercel.
 
 ## 📋 Pré-requisitos
 
@@ -32,8 +32,8 @@ Antes do deploy, certifique-se de ter:
 
 1. **Clone ou atualize o repositório:**
 ```bash
-git clone https://github.com/Elisson78/EssentiaCRM.git
-cd EssentiaCRM
+git clone https://github.com/seu-usuario/turguide.git
+cd turguide
 ```
 
 2. **Instale as dependências:**
@@ -51,7 +51,7 @@ npm run dev:web
 ### Opção A: Deploy via Dashboard (Recomendado)
 
 1. Acesse [vercel.com/new](https://vercel.com/new)
-2. Importe o repositório `Elisson78/EssentiaCRM`
+2. Importe o repositório do seu projeto TurGuide
 3. Configure:
    - **Framework Preset**: Next.js
    - **Root Directory**: `apps/web`
@@ -211,4 +211,4 @@ Se encontrar problemas:
 
 ---
 
-**Desenvolvido para EssentiaCRM** 🚀
+**Desenvolvido para TurGuide** 🚀
