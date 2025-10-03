@@ -81,7 +81,7 @@ export async function GET(
           <p><strong>Nome:</strong> ${dadosReserva.clienteNome}</p>
           <p><strong>Email:</strong> ${dadosReserva.clienteEmail}</p>
           <p><strong>Telefone:</strong> ${dadosReserva.clienteTelefone || 'Não informado'}</p>
-          <p><strong>Data da Reserva:</strong> ${new Date(dadosReserva.criadoEm).toLocaleDateString('pt-BR')}</p>
+          <p><strong>Data da Reserva:</strong> ${dadosReserva.criadoEm ? new Date(dadosReserva.criadoEm).toLocaleDateString('pt-BR') : 'Não informado'}</p>
         </div>
       </div>
 
