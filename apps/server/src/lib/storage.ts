@@ -25,7 +25,7 @@ export class DatabaseStorage implements IStorage {
 
   async upsertUser(userData: UpsertUser): Promise<User> {
     // Primeiro, verifica se usuário já existe pelo email
-    const existingUser = await db.select().from(users).where(eq(users.email, userData.email)).limit(1);
+    const existingUser = await db.select().from(users).where(eq(users.email, userData.email || '')).limit(1);
 
     if (existingUser.length > 0) {
       // Atualiza o usuário existente
