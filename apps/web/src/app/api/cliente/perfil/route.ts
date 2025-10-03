@@ -55,10 +55,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Cliente não encontrado' }, { status: 404 });
     }
 
-    // Remover dados sensíveis
-    const { passwordHash, ...clienteSemSenha } = cliente[0];
-
-    return NextResponse.json(clienteSemSenha);
+    // Retornar dados do cliente (clientes não têm passwordHash)
+    return NextResponse.json(cliente[0]);
     
   } catch (error) {
     console.error('Erro ao buscar perfil:', error);
