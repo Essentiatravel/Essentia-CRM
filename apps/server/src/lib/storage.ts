@@ -38,7 +38,7 @@ export class DatabaseStorage implements IStorage {
           userType: userData.userType,
           updatedAt: new Date(),
         })
-        .where(eq(users.email, userData.email))
+        .where(eq(users.email, userData.email || ''))
         .returning();
       return user;
     } else {
