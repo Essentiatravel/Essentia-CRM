@@ -8,15 +8,16 @@
 3. ✅ **Configuração Turbopack otimizada** - Removida flag que causava erros
 4. ✅ **Configuração Vercel simplificada** - Melhor compatibilidade
 5. ✅ **Dependencies radio-group instalada** - @radix-ui/react-radio-group
+6. ✅ **Migrado para Supabase** - Removidas dependências do Replit e SQLite
 
 ## ⚙️ **Configurações para Deploy**
 
 ### 1. **Variáveis de Ambiente na Vercel**
 ```env
-DATABASE_URL=sua_url_do_neon_postgresql
-REPL_ID=turguide
-REPLIT_DOMAINS=seu-dominio.vercel.app
-ISSUER_URL=https://replit.com/oidc
+NEXT_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sua_chave_anonima_supabase
+SUPABASE_SERVICE_ROLE_KEY=sua_chave_service_role_supabase
+DATABASE_URL=postgresql://postgres:senha@host.supabase.co:5432/postgres
 SESSION_SECRET=sua_string_secreta_aleatoria_64_caracteres
 ```
 
@@ -46,19 +47,18 @@ turguide/
 ### **1. Commit das Correções**
 ```bash
 git add .
-git commit -m "fix: Correções para deploy na Vercel
+git commit -m "Remove Replit dependencies and migrate to Supabase
 
-- Criado componente radio-group faltante
-- Corrigida variável desconto no checkout  
-- Simplificada configuração Turbopack
-- Otimizada configuração para Vercel
-- Todas as dependências instaladas corretamente"
+- Removed .replit configuration file
+- Removed sqlite/sqlite3 dependencies
+- Updated environment variables to use Supabase
+- All database operations now use Supabase PostgreSQL"
 git push origin main
 ```
 
 ### **2. Deploy na Vercel**
 1. **Import projeto** do GitHub
-2. **Configure variáveis** de ambiente acima
+2. **Configure variáveis** de ambiente do Supabase acima
 3. **Use configurações** especificadas
 4. **Deploy!** ✅
 
@@ -67,6 +67,7 @@ git push origin main
 - ✅ **Menu mobile funcionando**
 - ✅ **Sistema de logout operacional**
 - ✅ **Configurações de deploy prontas**
+- ✅ **Migrado para Supabase**
 - ✅ **Projeto pronto para produção**
 
 ## 🐛 **Se Ainda Houver Problemas**
@@ -80,7 +81,7 @@ git push origin main
 - Dependencies instaladas corretamente
 
 ### **Database Connection:**
-- Configure DATABASE_URL do Neon
-- Teste conexão na Vercel
+- Configure DATABASE_URL do Supabase
+- Teste conexão na Vercel com as credenciais do Supabase
 
-**O projeto agora está 100% pronto para deploy na Vercel!** 🚀
+**O projeto agora está 100% pronto para deploy na Vercel com Supabase!** 🚀
