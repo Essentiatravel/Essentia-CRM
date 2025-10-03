@@ -1,6 +1,3 @@
-# Apps não relacionados ao deploy
-apps/server
-
 # Node modules
 node_modules
 **/node_modules
