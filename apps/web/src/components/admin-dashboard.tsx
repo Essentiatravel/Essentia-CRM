@@ -316,7 +316,7 @@ export const AdminDashboard: React.FC = () => {
           });
         }
       } catch (error) {
-        if (error.name === 'AbortError') {
+        if (error instanceof Error && error.name === 'AbortError') {
           console.error('Timeout ao carregar estatísticas do dashboard');
         } else {
           console.error('Erro ao carregar estatísticas:', error);
