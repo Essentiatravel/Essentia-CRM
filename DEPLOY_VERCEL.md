@@ -52,12 +52,14 @@ npm run dev:web
 
 1. Acesse [vercel.com/new](https://vercel.com/new)
 2. Importe o repositório do seu projeto TurGuide
-3. Configure:
+3. **IMPORTANTE** - Configure manualmente estas opções:
    - **Framework Preset**: Next.js
    - **Root Directory**: `apps/web`
    - **Build Command**: `npm run build`
    - **Output Directory**: `.next`
-   - **Install Command**: `cd ../.. && npm install`
+   - **Install Command**: `npm install`
+
+   ⚠️ **ATENÇÃO**: A Vercel detecta automaticamente o Turbo e pode tentar ajustar os comandos. Se der erro, vá em **Settings** → **General** e configure estes valores exatamente como acima.
 
 ### Opção B: Deploy via CLI
 
