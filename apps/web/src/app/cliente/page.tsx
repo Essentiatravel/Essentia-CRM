@@ -29,7 +29,7 @@ export default function ClienteDashboard() {
           <div className="flex justify-between items-center h-16">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Área do Cliente</h1>
-              <p className="text-gray-600">Bem-vindo, {user.nome}</p>
+              <p className="text-gray-600">Bem-vindo, {user?.nome || 'Cliente'}</p>
             </div>
             <Button onClick={logout} variant="outline">
               Sair
@@ -55,21 +55,21 @@ export default function ClienteDashboard() {
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <Mail className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm">{user.email}</span>
+                  <span className="text-sm">{user?.email}</span>
                 </div>
-                {user.telefone && (
+                {user?.telefone && (
                   <div className="flex items-center gap-3">
                     <Phone className="h-4 w-4 text-gray-500" />
                     <span className="text-sm">{user.telefone}</span>
                   </div>
                 )}
-                {user.endereco && (
+                {user?.endereco && (
                   <div className="flex items-center gap-3">
                     <MapPin className="h-4 w-4 text-gray-500" />
                     <span className="text-sm">{user.endereco}</span>
                   </div>
                 )}
-                {user.data_nascimento && (
+                {user?.data_nascimento && (
                   <div className="flex items-center gap-3">
                     <Calendar className="h-4 w-4 text-gray-500" />
                     <span className="text-sm">
