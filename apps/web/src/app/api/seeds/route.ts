@@ -7,13 +7,11 @@ import { POST as seedAgendamentos } from "./agendamentos/route";
 
 export async function POST() {
   try {
-    await seedUsers(new Request(""));
-    await seedPasseios();
-    await seedClientes();
-    await seedGuias();
-    await seedAgendamentos();
-
-    return NextResponse.json({ success: true });
+    console.warn("⚠️ API /api/seeds desativada. Utilize 'cd apps/server && npm run db:seed'.");
+    return NextResponse.json({
+      error: "Seed via API desativada",
+      message: "Execute 'npm run db:seed' em apps/server para popular o banco."
+    }, { status: 410 });
   } catch (error) {
     console.error("Erro ao executar seed completo:", error);
     return NextResponse.json({ error: "Erro ao executar seed completo" }, { status: 500 });
