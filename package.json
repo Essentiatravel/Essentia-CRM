@@ -6,15 +6,10 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspace=web",
-    "dev": "npm run dev --workspace=web",
-    "dev:web": "npm run dev --workspace=web",
-    "dev:server": "npm run dev --workspace=server",
-    "lint": "npm run lint --workspace=web",
-    "type-check": "npm run type-check --workspace=web",
-    "db:push": "cd apps/server && npm run db:push",
-    "db:studio": "cd apps/server && npm run db:studio",
-    "db:seed": "cd apps/server && npm run db:seed"
+    "build": "cd apps/web && npm run build",
+    "dev": "cd apps/web && npm run dev",
+    "lint": "cd apps/web && npm run lint",
+    "type-check": "cd apps/web && npm run type-check"
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^1.0.117",
