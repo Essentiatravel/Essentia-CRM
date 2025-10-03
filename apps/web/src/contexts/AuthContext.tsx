@@ -1,26 +1,33 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 interface User {
   id: string;
   email: string;
-  nome: string;
-  userType: 'admin' | 'guia' | 'cliente';
+  nome?: string;
+  userType?: "admin" | "guia" | "cliente";
   telefone?: string;
   endereco?: string;
   data_nascimento?: string;
   cpf?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
 }
 
 interface AuthContextType {
   user: User | null;
-  login: () => void;
-  logout: () => void;
   loading: boolean;
-  isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<{ error?: string }>;
+  logout: () => Promise<void>;
+  signup: (
+    params: {
+      email: string;
+      password: string;
+      nome?: string;
+      userType?: User["userType"];
+      metadata?: Record<string, string | string[]>;
+    }
+  ) => Promise<{ error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,7 +35,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
+    throw new Error("useAuth deve ser usado dentro de um AuthProvider");
   }
   return context;
 }
@@ -36,103 +43,162 @@ export function useAuth() {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isClient, setIsClient] = useState(false);
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  useEffect(() => {
-    if (!isClient) return;
-
-    const fetchUser = async () => {
-      try {
-        // Tentar buscar usuário autenticado via API primeiro
-        const response = await fetch('/api/auth/user', {
-          credentials: 'include'
-        });
-        
-        if (response.ok) {
-          const userData = await response.json();
-          if (userData && userData.id) {
-            setUser(userData);
-            // Salvar no localStorage como backup
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('auth-user', JSON.stringify(userData));
-            }
-            return;
-          }
-        }
-        
-        // Se API falhou ou retornou 401, tentar localStorage como fallback
-        if (typeof window !== 'undefined') {
-          const localUser = localStorage.getItem('auth-user');
-          if (localUser) {
-            try {
-              const userData = JSON.parse(localUser);
-              setUser(userData);
-              return;
-            } catch (e) {
-              console.log('Invalid localStorage data');
-              localStorage.removeItem('auth-user');
-            }
-          }
-        }
-        
-        // Se nenhuma fonte tem usuário válido, usuário não está logado
-        setUser(null);
-      } catch (error) {
-        console.log('Error loading user:', error);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, [isClient]);
-
-  const login = () => {
-    if (typeof window === 'undefined') return;
-    const currentPath = window.location.pathname;
-    window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
-  };
-
-  const logout = async () => {
+  // Função para buscar dados do usuário da tabela users
+  const fetchUserProfile = async (userId: string) => {
     try {
-      if (typeof window === 'undefined') return;
+      const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", userId)
+        .maybeSingle();
 
-      // Primeiro remove localmente
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('auth-user');
+      if (error || !data) {
+        console.error("Erro ao buscar perfil do usuário:", error?.message);
+        return null;
       }
-      setUser(null);
 
-      // Então chama a API (mesmo que falhe, o logout local já aconteceu)
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include' // Importante para cookies no Replit
-      });
-
-      // Redireciona para home
-      window.location.href = '/';
+      const [firstName, ...lastNameParts] = (data.nome || "").split(" ");
+      return {
+        id: data.id,
+        email: data.email,
+        nome: data.nome,
+        firstName: firstName || "",
+        lastName: lastNameParts.join(" ") || "",
+        userType: data.user_type || data.userType, // Aceitar ambos os nomes
+        telefone: data.telefone,
+        endereco: data.endereco,
+        data_nascimento: data.dataNascimento,
+        cpf: data.cpf,
+      };
     } catch (error) {
-      console.error('Logout error:', error);
-      // Mesmo com erro na API, já fizemos logout local
-      if (typeof window !== 'undefined') {
-        window.location.href = '/';
-      }
+      console.error("Erro ao buscar perfil:", error);
+      return null;
     }
   };
 
+  useEffect(() => {
+    const getSession = async () => {
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+
+      if (error) {
+        console.error("Erro ao carregar sessão Supabase:", error.message);
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      if (!session?.user) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      // Buscar dados completos do usuário da tabela users
+      const profile = await fetchUserProfile(session.user.id);
+      if (profile) {
+        setUser(profile);
+      } else {
+        // Fallback para user_metadata se não encontrar na tabela
+        const metadata = session.user.user_metadata ?? {};
+        setUser({
+          id: session.user.id,
+          email: session.user.email ?? "",
+          nome: metadata.nome,
+          userType: metadata.userType,
+          telefone: metadata.telefone,
+          endereco: metadata.endereco,
+          data_nascimento: metadata.data_nascimento,
+          cpf: metadata.cpf,
+        });
+      }
+      setLoading(false);
+    };
+
+    getSession();
+
+    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!session?.user) {
+        setUser(null);
+        return;
+      }
+
+      // Buscar dados completos do usuário da tabela users
+      const profile = await fetchUserProfile(session.user.id);
+      if (profile) {
+        setUser(profile);
+      } else {
+        // Fallback para user_metadata se não encontrar na tabela
+        const metadata = session.user.user_metadata ?? {};
+        setUser({
+          id: session.user.id,
+          email: session.user.email ?? "",
+          nome: metadata.nome,
+          userType: metadata.userType,
+          telefone: metadata.telefone,
+          endereco: metadata.endereco,
+          data_nascimento: metadata.data_nascimento,
+          cpf: metadata.cpf,
+        });
+      }
+    });
+
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      console.error("Erro no login do Supabase:", error.message);
+      return { error: error.message };
+    }
+    return {};
+  };
+
+  const signup: AuthContextType["signup"] = async ({ email, password, nome, userType, metadata }) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          nome,
+          userType,
+          ...metadata,
+        },
+      },
+    });
+
+    if (error) {
+      console.error("Erro no cadastro Supabase:", error.message);
+      return { error: error.message };
+    }
+
+    return {};
+  };
+
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error("Erro ao sair do Supabase:", error.message);
+    }
+    setUser(null);
+  };
+
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      login, 
-      logout, 
-      loading,
-      isAuthenticated: !!user 
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        logout,
+        signup,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -1,69 +1,86 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
 import { randomUUID } from 'crypto';
-import { getUserByEmail } from '@/lib/database';
 import { fileTypeFromBuffer } from 'file-type';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export async function POST(request: NextRequest) {
   try {
-    // Verificar autenticação usando sistema existente mas com validação server-side
-    const sessionCookie = request.cookies.get('auth-session');
+    console.log('📤 Upload - Iniciando upload para Supabase Storage');
     
-    if (!sessionCookie) {
+    // Criar cliente Supabase com service role para autenticação server-side
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+
+    // Pegar token do header Authorization ou cookies
+    const authHeader = request.headers.get('authorization');
+    const cookies = request.cookies;
+    const accessToken = authHeader?.replace('Bearer ', '') || 
+                       cookies.get('sb-access-token')?.value || 
+                       cookies.get('supabase-auth-token')?.value;
+
+    console.log('🔐 Upload - Validando autenticação');
+    console.log('🔍 Headers:', {
+      hasAuthHeader: !!authHeader,
+      hasCookie1: !!cookies.get('sb-access-token'),
+      hasCookie2: !!cookies.get('supabase-auth-token'),
+      hasToken: !!accessToken,
+      tokenPrefix: accessToken ? accessToken.substring(0, 20) + '...' : 'none'
+    });
+
+    if (!accessToken) {
+      console.log('❌ Upload - Token não encontrado');
+      return NextResponse.json(
+        { error: 'Token de autenticação não encontrado. Faça login novamente.' },
+        { status: 401 }
+      );
+    }
+
+    // Criar cliente com token do usuário para validação
+    const supabaseUser = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+      global: {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      }
+    });
+
+    const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
+
+    if (userError || !user) {
+      console.log('❌ Upload - Não autenticado:', { 
+        error: userError?.message,
+        hasUser: !!user 
+      });
       return NextResponse.json(
         { error: 'Acesso negado. Faça login para fazer upload de imagens.' },
         { status: 401 }
       );
     }
 
-    // Validar dados da sessão
-    let sessionData;
-    try {
-      sessionData = JSON.parse(sessionCookie.value);
-    } catch (error) {
-      return NextResponse.json(
-        { error: 'Sessão inválida. Faça login novamente.' },
-        { status: 401 }
-      );
-    }
+    const userType = user.user_metadata?.userType;
+    const userEmail = user.email;
+    
+    console.log('👤 Upload - Usuário:', userEmail, 'Tipo:', userType, 'Metadata:', user.user_metadata);
 
-    // Verificar se a sessão não expirou
-    const now = Math.floor(Date.now() / 1000);
-    if (sessionData.expires_at && now > sessionData.expires_at) {
-      return NextResponse.json(
-        { error: 'Sessão expirada. Faça login novamente.' },
-        { status: 401 }
-      );
-    }
+    // Verificar se é admin: por userType ou por email
+    const isAdmin = userType === 'admin' || 
+                    userEmail === 'admin@turguide.com' ||
+                    userEmail?.endsWith('@admin.com');
 
-    // VALIDAÇÃO CRÍTICA: Verificar usuário real no banco de dados
-    const userEmail = sessionData.user?.email;
-    if (!userEmail) {
+    if (!isAdmin) {
+      console.log('❌ Upload - Não é admin:', { userType, userEmail });
       return NextResponse.json(
-        { error: 'Dados de usuário inválidos na sessão.' },
-        { status: 401 }
-      );
-    }
-
-    const dbUser = await getUserByEmail(userEmail);
-    if (!dbUser) {
-      return NextResponse.json(
-        { error: 'Usuário não encontrado no banco de dados.' },
-        { status: 401 }
-      );
-    }
-
-    // Verificar se o usuário é admin no banco (não no cookie)
-    if (dbUser.user_type !== 'admin') {
-      console.log('🚫 Acesso negado - Usuário não é admin:', userEmail, 'tipo:', dbUser.user_type);
-      return NextResponse.json(
-        { error: 'Acesso negado. Apenas administradores podem fazer upload de imagens.' },
+        { error: 'Apenas administradores podem enviar imagens.' },
         { status: 403 }
       );
     }
-    
-    console.log('✅ Usuário admin autenticado:', userEmail);
+
+    console.log('✅ Upload - Autenticação OK');
 
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
@@ -75,10 +92,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar tipo de arquivo (validação dupla - MIME type e extensão)
     const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
-    
+
     if (!file.type || !allowedMimeTypes.includes(file.type.toLowerCase())) {
       return NextResponse.json(
         { error: 'Tipo de arquivo não permitido. Use apenas JPG, PNG ou WebP.' },
@@ -86,7 +102,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar extensão do arquivo
     const fileExt = `.${file.name.split('.').pop()?.toLowerCase() || ''}`;
     if (!allowedExtensions.includes(fileExt)) {
       return NextResponse.json(
@@ -95,7 +110,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar tamanho do arquivo (5MB máximo)
     if (file.size > 5 * 1024 * 1024) {
       return NextResponse.json(
         { error: 'Arquivo muito grande. Máximo 5MB permitido.' },
@@ -103,7 +117,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar se o arquivo não está vazio
     if (file.size === 0) {
       return NextResponse.json(
         { error: 'Arquivo vazio não é permitido.' },
@@ -111,52 +124,63 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Converter para buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Verificar tipo de arquivo usando magic bytes (segurança real)
     const detectedType = await fileTypeFromBuffer(buffer);
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    
+
     if (!detectedType || !allowedTypes.includes(detectedType.mime)) {
       return NextResponse.json(
-        { error: 'Arquivo não é uma imagem válida. Detectado através de assinatura binária.' },
+        { error: 'Arquivo não é uma imagem válida.' },
         { status: 400 }
       );
     }
 
-    // Gerar nome único para o arquivo (sanitizar extensão)
     const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
     const fileName = `${randomUUID()}.${fileExtension}`;
-    
-    // Validar que o nome do arquivo gerado é seguro
+
     if (!/^[a-f0-9-]+\.(jpg|jpeg|png|webp)$/.test(fileName)) {
       return NextResponse.json(
         { error: 'Nome de arquivo inválido gerado.' },
         { status: 500 }
       );
     }
-    
-    // Criar diretório se não existir
-    const uploadsDir = join(process.cwd(), 'public', 'uploads', 'passeios');
-    await mkdir(uploadsDir, { recursive: true });
 
-    // Salvar arquivo
-    const filePath = join(uploadsDir, fileName);
-    await writeFile(filePath, buffer);
+    console.log('📁 Upload - Enviando para Supabase Storage:', fileName);
 
-    // Retornar URL pública
-    const publicUrl = `/uploads/passeios/${fileName}`;
+    // Upload para Supabase Storage usando service role (admin)
+    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+      .from('cards turs')
+      .upload(`passeios/${fileName}`, buffer, {
+        contentType: detectedType.mime,
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (uploadError) {
+      console.error('❌ Erro no upload para Supabase:', uploadError);
+      return NextResponse.json(
+        { error: `Erro ao fazer upload: ${uploadError.message}` },
+        { status: 500 }
+      );
+    }
+
+    // Obter URL pública da imagem
+    const { data: { publicUrl } } = supabaseAdmin.storage
+      .from('cards turs')
+      .getPublicUrl(`passeios/${fileName}`);
+
+    console.log('✅ Upload - Sucesso:', { fileName, publicUrl });
 
     return NextResponse.json({
       success: true,
       url: publicUrl,
-      fileName: fileName
+      fileName,
+      path: `passeios/${fileName}`
     });
-
   } catch (error) {
-    console.error('Erro no upload:', error);
+    console.error('❌ Erro no upload:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

@@ -1,19 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
-  MapPin,
-  Home,
-  Calendar,
-  CalendarDays,
-  Users,
-  Heart,
-  DollarSign,
-  LogOut,
   Search,
   Star,
   TrendingUp,
@@ -25,7 +18,6 @@ import {
   Mail,
   Phone,
 } from "lucide-react";
-import AdminMobileNav from "./admin-mobile-nav";
 
 interface Lead {
   id: string;
@@ -202,84 +194,12 @@ const mockLeads: Lead[] = [
   },
 ];
 
-// Componente da barra lateral
-const Sidebar: React.FC = () => (
-  <div className="hidden lg:block w-64 bg-white border-r border-gray-200 h-screen fixed left-0 top-0">
-    <div className="p-6">
-      {/* Logo */}
-      <div className="flex items-center gap-2 mb-8">
-        <div className="p-2 bg-blue-600 rounded-lg">
-          <MapPin className="h-6 w-6 text-white" />
-        </div>
-        <div>
-          <h1 className="font-bold text-lg text-gray-900">TourGuide CRM</h1>
-          <p className="text-sm text-gray-600">Administrador</p>
-        </div>
-      </div>
-
-      {/* Navegação */}
-      <div className="mb-8">
-        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
-          Navegação
-        </h3>
-        <nav className="space-y-2">
-          {[
-            { icon: "Home", label: "Dashboard", active: false, href: "/admin" },
-            { icon: "Calendar", label: "Agendamentos", active: false, href: "/admin/agendamentos" },
-            { icon: "CalendarDays", label: "Calendário Global", active: false, href: "/admin/calendario" },
-            { icon: "Users", label: "Guias", active: false, href: "/admin/guias" },
-            { icon: "Heart", label: "Clientes", active: true, href: "/admin/clientes" },
-            { icon: "MapPin", label: "Passeios", active: false, href: "/admin/passeios" },
-            { icon: "DollarSign", label: "Financeiro", active: false, href: "/admin/financeiro" },
-          ].map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                item.active
-                  ? "bg-blue-50 text-blue-700 border-r-2 border-blue-700"
-                  : "text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              {item.icon === "Home" && <Home className="h-4 w-4" />}
-              {item.icon === "Calendar" && <Calendar className="h-4 w-4" />}
-              {item.icon === "CalendarDays" && <CalendarDays className="h-4 w-4" />}
-              {item.icon === "Users" && <Users className="h-4 w-4" />}
-              {item.icon === "Heart" && <Heart className="h-4 w-4" />}
-              {item.icon === "MapPin" && <MapPin className="h-4 w-4" />}
-              {item.icon === "DollarSign" && <DollarSign className="h-4 w-4" />}
-              {item.label}
-            </a>
-          ))}
-        </nav>
-      </div>
-
-      {/* Perfil do usuário */}
-      <div className="absolute bottom-6 left-6 right-6">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-            <span className="text-sm font-medium text-gray-700">E</span>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-gray-900">ELISSON UZUAL</p>
-            <p className="text-xs text-gray-600">uzualelisson@gmail.com</p>
-          </div>
-        </div>
-        <Button variant="outline" size="sm" className="w-full">
-          <LogOut className="h-4 w-4 mr-2" />
-          Sair
-        </Button>
-      </div>
-    </div>
-  </div>
-);
-
 // Componente do dropdown de ações
 const ActionDropdown: React.FC<{ lead: Lead }> = ({ lead }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   // Fechar dropdown quando clicar fora
-  React.useEffect(() => {
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
       if (!target.closest('.dropdown-container')) {
@@ -348,13 +268,14 @@ const ActionDropdown: React.FC<{ lead: Lead }> = ({ lead }) => {
 };
 
 export default function ManageClientsPage() {
+  const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<"clients" | "leads">("leads");
   const [searchTerm, setSearchTerm] = useState("");
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Carregar clientes do banco
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchClients = async () => {
       try {
         const response = await fetch('/api/clientes');
@@ -423,92 +344,83 @@ export default function ManageClientsPage() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Navegação mobile */}
-      <AdminMobileNav userName="ELISSON UZUAL" userEmail="uzualelisson@gmail.com" />
-      
-      {/* Barra lateral */}
-      <Sidebar />
-
-      {/* Conteúdo principal */}
-      <div className="flex-1 lg:ml-64 ml-0">
-        <div className="p-4 lg:p-8">
+    <div className="p-3 lg:p-5 h-full overflow-auto">
           {/* Cabeçalho */}
-          <div className="mb-8">
-            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
+          <div className="mb-4">
+            <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
               Gerenciar Clientes & Leads
             </h1>
-            <p className="text-gray-600 mt-2">
+            <p className="text-sm text-gray-600 mt-1">
               Visualize seus clientes ativos e leads em potencial.
             </p>
           </div>
 
           {/* Barra de busca */}
-          <div className="flex justify-end mb-6">
+          <div className="flex justify-end mb-3">
             <div className="relative w-80">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
                 placeholder="Buscar por nome ou email"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 h-9 text-sm"
               />
             </div>
           </div>
 
           {/* Cards de métricas */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total de Clientes</p>
-                    <p className="text-2xl font-bold text-gray-900">{totalClients}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-gray-600 truncate">Total de Clientes</p>
+                    <p className="text-xl font-bold text-gray-900 mt-1">{totalClients}</p>
                   </div>
-                  <div className="p-3 rounded-lg bg-blue-100">
-                    <Star className="h-6 w-6 text-blue-600" />
+                  <div className="p-2.5 rounded-lg bg-blue-100 flex-shrink-0 ml-3">
+                    <Star className="h-5 w-5 text-blue-600" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total de Leads</p>
-                    <p className="text-2xl font-bold text-gray-900">{totalLeads}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-gray-600 truncate">Total de Leads</p>
+                    <p className="text-xl font-bold text-gray-900 mt-1">{totalLeads}</p>
                   </div>
-                  <div className="p-3 rounded-lg bg-yellow-100">
-                    <TrendingUp className="h-6 w-6 text-yellow-600" />
+                  <div className="p-2.5 rounded-lg bg-yellow-100 flex-shrink-0 ml-3">
+                    <TrendingUp className="h-5 w-5 text-yellow-600" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Leads Convertidos</p>
-                    <p className="text-2xl font-bold text-gray-900">{convertedLeads}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-gray-600 truncate">Leads Convertidos</p>
+                    <p className="text-xl font-bold text-gray-900 mt-1">{convertedLeads}</p>
                   </div>
-                  <div className="p-3 rounded-lg bg-green-100">
-                    <Star className="h-6 w-6 text-green-600" />
+                  <div className="p-2.5 rounded-lg bg-green-100 flex-shrink-0 ml-3">
+                    <Star className="h-5 w-5 text-green-600" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Novos Leads (Mês)</p>
-                    <p className="text-2xl font-bold text-gray-900">{newLeadsThisMonth}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-gray-600 truncate">Novos Leads (Mês)</p>
+                    <p className="text-xl font-bold text-gray-900 mt-1">{newLeadsThisMonth}</p>
                   </div>
-                  <div className="p-3 rounded-lg bg-purple-100">
-                    <Plus className="h-6 w-6 text-purple-600" />
+                  <div className="p-2.5 rounded-lg bg-purple-100 flex-shrink-0 ml-3">
+                    <Plus className="h-5 w-5 text-purple-600" />
                   </div>
                 </div>
               </CardContent>
@@ -516,7 +428,7 @@ export default function ManageClientsPage() {
           </div>
 
           {/* Tabs */}
-          <div className="mb-6">
+          <div className="mb-3">
             <div className="border-b border-gray-200">
               <nav className="-mb-px flex space-x-8">
                 <button
@@ -547,25 +459,25 @@ export default function ManageClientsPage() {
           <Card>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full text-sm">
                   <thead className="bg-gray-50 border-b">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                         Lead
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                         Contato
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                         Origem
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                         Interesses
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                         Ações
                       </th>
                     </tr>
@@ -573,7 +485,7 @@ export default function ManageClientsPage() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredLeads.map((lead) => (
                       <tr key={lead.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-2.5 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                               <span className="text-sm font-medium text-blue-600">
@@ -590,35 +502,35 @@ export default function ManageClientsPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="space-y-1">
-                            <div className="flex items-center text-sm text-gray-900">
-                              <Mail className="h-4 w-4 text-gray-400 mr-2" />
-                              {lead.email}
+                        <td className="px-4 py-2.5 whitespace-nowrap">
+                          <div className="space-y-0.5">
+                            <div className="flex items-center text-xs text-gray-900">
+                              <Mail className="h-3 w-3 text-gray-400 mr-1.5 flex-shrink-0" />
+                              <span className="truncate">{lead.email}</span>
                             </div>
-                            <div className="flex items-center text-sm text-gray-500">
-                              <Phone className="h-4 w-4 text-gray-400 mr-2" />
+                            <div className="flex items-center text-xs text-gray-500">
+                              <Phone className="h-3 w-3 text-gray-400 mr-1.5 flex-shrink-0" />
                               {lead.phone}
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-2.5 whitespace-nowrap">
                           <Badge 
                             variant="secondary" 
-                            className={getOriginColor(lead.origin)}
+                            className={`${getOriginColor(lead.origin)} text-xs`}
                           >
                             {lead.origin}
                           </Badge>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-2.5 whitespace-nowrap">
                           <Badge 
                             variant="secondary" 
-                            className={getStatusColor(lead.status)}
+                            className={`${getStatusColor(lead.status)} text-xs`}
                           >
                             {lead.status}
                           </Badge>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-2.5 whitespace-nowrap">
                           <div className="flex flex-wrap gap-1">
                             {lead.interests.slice(0, 2).map((interest, index) => (
                               <Badge key={index} variant="outline" className="text-xs">
@@ -632,7 +544,7 @@ export default function ManageClientsPage() {
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-4 py-2.5 whitespace-nowrap text-sm text-gray-500">
                           <ActionDropdown lead={lead} />
                         </td>
                       </tr>
@@ -642,8 +554,6 @@ export default function ManageClientsPage() {
               </div>
             </CardContent>
           </Card>
-        </div>
-      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -147,7 +148,7 @@ const GuiaMetricCard: React.FC<{ metric: GuiaMetric; index: number }> = ({ metri
   </motion.div>
 );
 
-const Sidebar: React.FC = () => (
+const Sidebar: React.FC<{ user: any; onLogout: () => Promise<void> }> = ({ user, onLogout }) => (
   <div className="hidden lg:block w-64 bg-white border-r border-gray-200 h-screen fixed left-0 top-0">
     <div className="p-6">
       <div className="flex items-center gap-2 mb-8">
@@ -193,14 +194,16 @@ const Sidebar: React.FC = () => (
       <div className="absolute bottom-6 left-6 right-6">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-            <span className="text-sm font-medium text-gray-700">E</span>
+            <span className="text-sm font-medium text-gray-700">
+              {user?.nome?.charAt(0)?.toUpperCase() || 'A'}
+            </span>
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-900">ELISSON UZUAL</p>
-            <p className="text-xs text-gray-600">uzualelisson@gmail.com</p>
+            <p className="text-sm font-medium text-gray-900">{user?.nome || 'Administrador'}</p>
+            <p className="text-xs text-gray-600">{user?.email || 'admin@turguide.com'}</p>
           </div>
         </div>
-        <Button variant="outline" size="sm" className="w-full">
+        <Button variant="outline" size="sm" className="w-full" onClick={onLogout}>
           <LogOut className="h-4 w-4 mr-2" />
           Sair
         </Button>
@@ -210,6 +213,7 @@ const Sidebar: React.FC = () => (
 );
 
 const GuiasPage: React.FC = () => {
+  const { user, logout } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("Todos os Status");
   const [guiasData, setGuiasData] = useState<Guia[]>([]);
@@ -299,14 +303,14 @@ const GuiasPage: React.FC = () => {
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
       
-      <div className="flex-1 lg:ml-64 ml-0">
-        <div className="p-4 lg:p-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
+      <div className="flex-1 lg:ml-05 ml-0">
+        <div className="p-3 lg:p-5">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
             <div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
+              <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
                 Gestão de Guias
               </h1>
-              <p className="text-gray-600 mt-1">
+              <p className="text-sm text-gray-600 mt-1">
                 Gerencie sua equipe de guias turísticos e acompanhe performance.
               </p>
             </div>
@@ -322,13 +326,13 @@ const GuiasPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
             {guiaMetrics.map((metric, index) => (
               <GuiaMetricCard key={index} metric={metric} index={index} />
             ))}
           </div>
 
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-3">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
@@ -355,22 +359,22 @@ const GuiasPage: React.FC = () => {
             transition={{ duration: 0.5 }}
           >
             <Card>
-              <CardHeader>
-                <CardTitle>Lista de Guias</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Lista de Guias</CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-6 font-medium text-gray-500">Nome</th>
-                        <th className="text-left py-3 px-6 font-medium text-gray-500">Contato</th>
-                        <th className="text-left py-3 px-6 font-medium text-gray-500">Especialidades</th>
-                        <th className="text-left py-3 px-6 font-medium text-gray-500">Avaliação</th>
-                        <th className="text-left py-3 px-6 font-medium text-gray-500">Passeios</th>
-                        <th className="text-left py-3 px-6 font-medium text-gray-500">Comissão</th>
-                        <th className="text-left py-3 px-6 font-medium text-gray-500">Status</th>
-                        <th className="text-left py-3 px-6 font-medium text-gray-500">Próximo</th>
+                      <tr className="border-b border-gray-200 bg-gray-50">
+                        <th className="text-left py-2 px-4 font-medium text-xs text-gray-600">Nome</th>
+                        <th className="text-left py-2 px-4 font-medium text-xs text-gray-600">Contato</th>
+                        <th className="text-left py-2 px-4 font-medium text-xs text-gray-600">Especialidades</th>
+                        <th className="text-left py-2 px-4 font-medium text-xs text-gray-600">Avaliação</th>
+                        <th className="text-left py-2 px-4 font-medium text-xs text-gray-600">Passeios</th>
+                        <th className="text-left py-2 px-4 font-medium text-xs text-gray-600">Comissão</th>
+                        <th className="text-left py-2 px-4 font-medium text-xs text-gray-600">Status</th>
+                        <th className="text-left py-2 px-4 font-medium text-xs text-gray-600">Próximo</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -382,25 +386,25 @@ const GuiasPage: React.FC = () => {
                           transition={{ duration: 0.3, delay: index * 0.05 }}
                           className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                         >
-                          <td className="py-4 px-6">
+                          <td className="py-2.5 px-4">
                             <div>
-                              <p className="font-medium text-gray-900">{guia.nome}</p>
-                              <p className="text-sm text-gray-600">{Array.isArray(guia.idiomas) ? guia.idiomas.join(", ") : guia.idiomas || "N/A"}</p>
+                              <p className="font-medium text-sm text-gray-900">{guia.nome}</p>
+                              <p className="text-xs text-gray-600">{Array.isArray(guia.idiomas) ? guia.idiomas.join(", ") : guia.idiomas || "N/A"}</p>
                             </div>
                           </td>
-                          <td className="py-4 px-6">
-                            <div className="space-y-1">
+                          <td className="py-2.5 px-4">
+                            <div className="space-y-0.5">
                               <div className="flex items-center gap-1">
-                                <Mail className="h-3 w-3 text-gray-400" />
-                                <span className="text-sm text-gray-600">{guia.email}</span>
+                                <Mail className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                                <span className="text-xs text-gray-600 truncate">{guia.email}</span>
                               </div>
                               <div className="flex items-center gap-1">
-                                <Phone className="h-3 w-3 text-gray-400" />
-                                <span className="text-sm text-gray-600">{guia.telefone}</span>
+                                <Phone className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                                <span className="text-xs text-gray-600">{guia.telefone}</span>
                               </div>
                             </div>
                           </td>
-                          <td className="py-4 px-6">
+                          <td className="py-2.5 px-4">
                             <div className="flex flex-wrap gap-1">
                               {Array.isArray(guia.especialidades) ? (
                                 <>
@@ -422,32 +426,32 @@ const GuiasPage: React.FC = () => {
                               )}
                             </div>
                           </td>
-                          <td className="py-4 px-6">
+                          <td className="py-2.5 px-4">
                             <div className="flex items-center gap-1">
-                              <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                              <span className="font-medium text-gray-900">
+                              <Star className="h-3 w-3 text-yellow-400 fill-current flex-shrink-0" />
+                              <span className="font-medium text-sm text-gray-900">
                                 {guia.avaliacaoMedia > 0 ? guia.avaliacaoMedia.toFixed(1) : "-"}
                               </span>
-                              <span className="text-sm text-gray-500">
+                              <span className="text-xs text-gray-500">
                                 ({guia.totalAvaliacoes})
                               </span>
                             </div>
                           </td>
-                          <td className="py-4 px-6">
-                            <span className="font-medium text-gray-900">
+                          <td className="py-2.5 px-4">
+                            <span className="font-medium text-sm text-gray-900">
                               {guia.passeiosRealizados}
                             </span>
                           </td>
-                          <td className="py-4 px-6">
-                            <span className="font-medium text-green-600">
+                          <td className="py-2.5 px-4">
+                            <span className="font-medium text-sm text-green-600">
                               R$ {guia.comissaoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </span>
                           </td>
-                          <td className="py-4 px-6">
+                          <td className="py-2.5 px-4">
                             {getStatusBadge(guia.status)}
                           </td>
-                          <td className="py-4 px-6">
-                            <span className="text-sm text-gray-600">
+                          <td className="py-2.5 px-4">
+                            <span className="text-xs text-gray-600">
                               {guia.proximoPasseio || "-"}
                             </span>
                           </td>

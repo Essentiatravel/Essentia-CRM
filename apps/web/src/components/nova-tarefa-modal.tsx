@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,7 +32,7 @@ interface Guia {
   especialidades: string[];
 }
 
-interface NovaTarefaData {
+export interface NovaTarefaData {
   passeioId: string | null;
   clienteId: string | null;
   guiaId?: string | null;
@@ -45,12 +45,23 @@ interface NovaTarefaData {
 interface NovaTarefaModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: NovaTarefaData) => void;
+  onSubmit: (data: NovaTarefaData) => Promise<void> | void;
   passeios: Passeio[];
   clientes: Cliente[];
   guias: Guia[];
   editingTarefa?: any;
+  isSubmitting?: boolean;
 }
+
+const emptyForm: NovaTarefaData = {
+  passeioId: null,
+  clienteId: null,
+  guiaId: null,
+  data: "",
+  numeroPessoas: 1,
+  observacoes: "",
+  comissaoPercentual: 30,
+};
 
 const NovaTarefaModal: React.FC<NovaTarefaModalProps> = ({
   isOpen,
@@ -59,20 +70,13 @@ const NovaTarefaModal: React.FC<NovaTarefaModalProps> = ({
   passeios,
   clientes,
   guias,
-  editingTarefa
+  editingTarefa,
+  isSubmitting = false,
 }) => {
-  const [formData, setFormData] = useState<NovaTarefaData>({
-    passeioId: null,
-    clienteId: null,
-    guiaId: null,
-    data: "",
-    numeroPessoas: 1,
-    observacoes: "",
-    comissaoPercentual: 30
-  });
+  const [formData, setFormData] = useState<NovaTarefaData>({ ...emptyForm });
 
   // Preencher formulário quando estiver editando
-  React.useEffect(() => {
+  useEffect(() => {
     if (editingTarefa) {
       setFormData({
         passeioId: editingTarefa.passeio_id,
@@ -84,23 +88,21 @@ const NovaTarefaModal: React.FC<NovaTarefaModalProps> = ({
         comissaoPercentual: editingTarefa.percentual_comissao || 30
       });
     } else {
-      setFormData({
-        passeioId: null,
-        clienteId: null,
-        guiaId: null,
-        data: "",
-        numeroPessoas: 1,
-        observacoes: "",
-        comissaoPercentual: 30
-      });
+      setFormData({ ...emptyForm });
     }
   }, [editingTarefa]);
+
+  useEffect(() => {
+    if (!isOpen && !editingTarefa) {
+      setFormData({ ...emptyForm });
+    }
+  }, [isOpen, editingTarefa]);
 
   const selectedPasseio = passeios.find(p => p.id === formData.passeioId);
   const valorTotal = selectedPasseio ? selectedPasseio.preco * formData.numeroPessoas : 0;
   const comissaoValor = valorTotal * (formData.comissaoPercentual / 100);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.passeioId && formData.data) {
       // Converter "none" para null
@@ -109,18 +111,7 @@ const NovaTarefaModal: React.FC<NovaTarefaModalProps> = ({
         clienteId: formData.clienteId === "none" ? null : formData.clienteId,
         guiaId: formData.guiaId === "none" ? null : formData.guiaId
       };
-      onSubmit(submitData);
-      onClose();
-      // Reset form
-      setFormData({
-        passeioId: null,
-        clienteId: null,
-        guiaId: null,
-        data: "",
-        numeroPessoas: 1,
-        observacoes: "",
-        comissaoPercentual: 30
-      });
+      await onSubmit(submitData);
     }
   };
 
@@ -237,7 +228,7 @@ const NovaTarefaModal: React.FC<NovaTarefaModalProps> = ({
                 </Label>
                 <Select
                   value={formData.clienteId || "none"}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, clienteId: value === "none" ? null : value })))
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, clienteId: value === "none" ? null : value }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um cliente (opcional)" />
@@ -311,9 +302,13 @@ const NovaTarefaModal: React.FC<NovaTarefaModalProps> = ({
             <Button
               type="submit"
               className="bg-blue-600 hover:bg-blue-700 text-white"
-              disabled={!formData.passeioId || !formData.data}
+              disabled={isSubmitting || !formData.passeioId || !formData.data}
             >
-              {editingTarefa ? 'Salvar Alterações' : 'Criar Tarefa'}
+              {isSubmitting
+                ? 'Salvando...'
+                : editingTarefa
+                  ? 'Salvar Alterações'
+                  : 'Criar Tarefa'}
             </Button>
           </div>
         </form>

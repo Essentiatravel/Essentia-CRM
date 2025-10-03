@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { formatCurrency } from "@/lib/format-utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -78,24 +79,31 @@ const createMetricCards = (stats: any): MetricCard[] => [
   },
   {
     title: "Receita Total",
-    value: `R$ ${(stats.receitaMes || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+    value: formatCurrency(stats.receitaMes || 0),
     icon: <DollarSign className="h-6 w-6" />,
     growth: "+18% este mês",
     color: "text-green-600",
+  },
+  {
+    title: "Administradores",
+    value: stats.totalAdmins || 0,
+    icon: <Users className="h-6 w-6" />,
+    growth: "+1 este mês",
+    color: "text-red-600",
   },
   {
     title: "Guias Ativos",
     value: stats.totalGuias || 0,
     icon: <Users className="h-6 w-6" />,
     growth: "+2 este mês",
-    color: "text-purple-600",
+    color: "text-blue-600",
   },
   {
     title: "Total de Clientes",
     value: stats.totalClientes || 0,
     icon: <Heart className="h-6 w-6" />,
     growth: "+5 este mês",
-    color: "text-red-600",
+    color: "text-green-600",
   },
 ];
 
@@ -170,17 +178,17 @@ const MetricCard: React.FC<{ metric: MetricCard }> = ({ metric }) => (
     transition={{ duration: 0.5 }}
   >
     <Card className="h-full">
-      <CardContent className="p-6">
+      <CardContent className="p-4">
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-600">{metric.title}</p>
-            <p className="text-2xl font-bold text-gray-900">{metric.value}</p>
-            <p className="text-sm text-green-600 flex items-center gap-1 mt-1">
-              <TrendingUp className="h-3 w-3" />
-              {metric.growth}
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-gray-600 truncate">{metric.title}</p>
+            <p className="text-xl font-bold text-gray-900 mt-1">{metric.value}</p>
+            <p className="text-xs text-green-600 flex items-center gap-1 mt-0.5">
+              <TrendingUp className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">{metric.growth}</span>
             </p>
           </div>
-          <div className={`p-3 rounded-lg ${metric.color} bg-opacity-10`}>
+          <div className={`p-2.5 rounded-lg ${metric.color} bg-opacity-10 flex-shrink-0 ml-3`}>
             <div className={metric.color}>{metric.icon}</div>
           </div>
         </div>
@@ -190,7 +198,7 @@ const MetricCard: React.FC<{ metric: MetricCard }> = ({ metric }) => (
 );
 
 // Componente da barra lateral
-const Sidebar: React.FC<{ onLogout: () => void; user: any }> = ({ onLogout, user }) => (
+const Sidebar: React.FC<{ onLogout: () => Promise<void>; user: any }> = ({ onLogout, user }) => (
   <div className="hidden lg:block w-64 bg-white border-r border-gray-200 h-screen fixed left-0 top-0">
     <div className="p-6">
       {/* Logo */}
@@ -249,7 +257,7 @@ const Sidebar: React.FC<{ onLogout: () => void; user: any }> = ({ onLogout, user
             <p className="text-xs text-gray-600">{user?.email || 'email@exemplo.com'}</p>
           </div>
         </div>
-        <Button variant="outline" size="sm" className="w-full" onClick={onLogout}>
+        <Button variant="outline" size="sm" className="w-full" onClick={() => onLogout()}>
           <LogOut className="h-4 w-4 mr-2" />
           Sair
         </Button>
@@ -266,6 +274,7 @@ export const AdminDashboard: React.FC = () => {
   const [dashboardStats, setDashboardStats] = useState({
     totalClientes: 0,
     totalGuias: 0,
+    totalAdmins: 0,
     totalPasseios: 0,
     agendamentosHoje: 0,
     agendamentosMes: 0,
@@ -273,20 +282,54 @@ export const AdminDashboard: React.FC = () => {
   });
 
   // Carregar estatísticas do dashboard
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchDashboardStats = async () => {
       try {
         console.log('Carregando estatísticas do dashboard...');
-        const response = await fetch('/api/dashboard?t=' + Date.now());
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+        
+        const response = await fetch('/api/dashboard', {
+          signal: controller.signal,
+          headers: { 
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        });
+        
+        clearTimeout(timeoutId);
+        
         if (response.ok) {
           const stats = await response.json();
           console.log('Estatísticas carregadas:', stats);
           setDashboardStats(stats);
         } else {
           console.error('Erro na resposta da API:', response.status);
+          setDashboardStats({
+            totalClientes: 0,
+            totalGuias: 0,
+            totalAdmins: 0,
+            totalPasseios: 0,
+            agendamentosHoje: 0,
+            agendamentosMes: 0,
+            receitaMes: 0
+          });
         }
       } catch (error) {
-        console.error('Erro ao carregar estatísticas:', error);
+        if (error.name === 'AbortError') {
+          console.error('Timeout ao carregar estatísticas do dashboard');
+        } else {
+          console.error('Erro ao carregar estatísticas:', error);
+        }
+        setDashboardStats({
+          totalClientes: 0,
+          totalGuias: 0,
+          totalAdmins: 0,
+          totalPasseios: 0,
+          agendamentosHoje: 0,
+          agendamentosMes: 0,
+          receitaMes: 0
+        });
       } finally {
         setIsLoading(false);
       }
@@ -331,15 +374,15 @@ export const AdminDashboard: React.FC = () => {
       <Sidebar onLogout={logout} user={user} />
 
       {/* Conteúdo principal */}
-      <div className="flex-1 lg:ml-64 ml-0">
-        <div className="p-4 lg:p-8">
+      <div className="flex-1 lg:ml-05 ml-0">
+        <div className="p-3 lg:p-5">
           {/* Cabeçalho */}
-          <div className="mb-8 flex justify-between items-start">
+          <div className="mb-4 flex justify-between items-start">
             <div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
+              <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
                 Dashboard Administrativo
               </h1>
-              <p className="text-gray-600 mt-2">
+              <p className="text-sm text-gray-600 mt-1">
                 Bem-vindo, {user?.nome || 'Usuário'}. Aqui está um resumo do seu negócio.
               </p>
             </div>
@@ -357,7 +400,7 @@ export const AdminDashboard: React.FC = () => {
           </div>
 
           {/* Cards de métricas */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
             {isLoading ? (
               <div className="col-span-full flex justify-center items-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -375,21 +418,21 @@ export const AdminDashboard: React.FC = () => {
           </div>
 
           {/* Seção inferior */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
             {/* Tarefas Recentes */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
                   <span className="text-green-600">▲</span>
                   Tarefas Recentes
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+              <CardContent className="pt-0">
+                <div className="space-y-2">
                   {recentTasks.map((task) => (
                     <div
                       key={task.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg"
                     >
                       <div className="flex items-center gap-3">
                         <div
@@ -420,11 +463,11 @@ export const AdminDashboard: React.FC = () => {
 
             {/* Ações Rápidas */}
             <Card>
-              <CardHeader>
-                <CardTitle>Ações Rápidas</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Ações Rápidas</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
+              <CardContent className="pt-0">
+                <div className="space-y-2">
                   {quickActions.map((action, index) => (
                     <div key={index}>
                       {action.title === "Cadastrar Passeio" ? (

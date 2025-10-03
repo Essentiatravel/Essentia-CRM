@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
-    domains: ['localhost', 'images.unsplash.com', 'via.placeholder.com'],
+    domains: ['localhost', 'images.unsplash.com', 'via.placeholder.com', 'nvviwqoxeznxpzitpwua.supabase.co'],
     unoptimized: false,
     remotePatterns: [
       {
@@ -21,6 +21,18 @@ const nextConfig: NextConfig = {
         hostname: 'via.placeholder.com',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/public/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'nvviwqoxeznxpzitpwua.supabase.co',
+        port: '',
+        pathname: '/storage/**',
       },
     ],
   },

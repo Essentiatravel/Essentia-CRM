@@ -1,9 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import GuiaNav from '@/components/guia-nav';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -66,7 +64,7 @@ export default function GuiaDashboard() {
   };
 
   // Carregar dados quando o componente montar
-  React.useEffect(() => {
+  useEffect(() => {
     fetchDashboardData();
   }, [user]);
 
@@ -119,12 +117,16 @@ export default function GuiaDashboard() {
   }
 
   return (
-    <ProtectedRoute allowedTypes={['guia']}>
-      <div className="min-h-screen bg-gray-50">
-        <GuiaNav />
+    <>
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Dashboard do Guia</h1>
+        <p className="text-gray-600">
+          Bem-vindo, {user?.nome}! Aqui você pode acompanhar seus agendamentos e comissões.
+        </p>
+      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Cards */}
+      {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -181,8 +183,8 @@ export default function GuiaDashboard() {
           </Card>
         </div>
 
-        {/* Agendamentos por Status */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Agendamentos por Status */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Próximos Passeios */}
           <Card>
             <CardHeader>
@@ -280,9 +282,7 @@ export default function GuiaDashboard() {
               </div>
             </CardContent>
           </Card>
-        </div>
       </div>
-    </div>
-    </ProtectedRoute>
+    </>
   );
 }

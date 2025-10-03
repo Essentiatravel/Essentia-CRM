@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { formatCurrency, useIsClient } from "@/lib/format-utils";
 import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from "@/components/ui/calendar";
+import { CalendarPt as Calendar } from "@/components/calendar-pt";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
@@ -26,8 +27,11 @@ import {
   X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, setDefaultOptions } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+// Configurar o locale português como padrão para date-fns
+setDefaultOptions({ locale: ptBR });
 import Link from "next/link";
 import Image from "next/image";
 
@@ -48,6 +52,7 @@ interface Passeio {
 export default function PasseioDetalhes() {
   const params = useParams();
   const router = useRouter();
+  const isClient = useIsClient();
   const [passeio, setPasseio] = useState<Passeio | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date>();
@@ -59,6 +64,7 @@ export default function PasseioDetalhes() {
     telefone: "",
     observacoes: ""
   });
+  const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
     const carregarPasseio = async () => {
@@ -84,34 +90,59 @@ export default function PasseioDetalhes() {
     }
   }, [params.id]);
 
-  const handleBooking = () => {
+  const handleBooking = async () => {
     if (!selectedDate || !customerInfo.nome || !customerInfo.email) {
       alert("Por favor, preencha todos os campos obrigatórios e selecione uma data.");
       return;
     }
 
-    // Calcular valor final considerando descontos
-    const valorBase = (passeio?.preco || 0) * selectedPeople;
-    const desconto = isGroup && selectedPeople >= 5 ? 0.1 : 0;
-    const valorFinal = valorBase * (1 - desconto);
+    setProcessing(true);
+    try {
+      const precheckResponse = await fetch('/api/clientes/precheck', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome: customerInfo.nome,
+          email: customerInfo.email,
+          telefone: customerInfo.telefone ?? null,
+        }),
+      });
 
-    const bookingData = {
-      passeioId: passeio?.id,
-      passeioNome: passeio?.nome,
-      data: selectedDate,
-      pessoas: selectedPeople,
-      tipoReserva: isGroup ? "grupo" : "individual",
-      valorOriginal: valorBase,
-      valorTotal: valorFinal,
-      desconto: desconto,
-      cliente: customerInfo
-    };
+      if (!precheckResponse.ok) {
+        const errorPayload = await precheckResponse.json().catch(() => ({}));
+        throw new Error(errorPayload?.error || 'Não foi possível cadastrar o cliente.');
+      }
 
-    // Salvar dados da reserva no localStorage para o checkout
-    localStorage.setItem('bookingData', JSON.stringify(bookingData));
-    
-    // Redirecionar para o checkout
-    router.push('/checkout');
+      const preCadastro = await precheckResponse.json();
+      if (!preCadastro?.success) {
+        throw new Error(preCadastro?.error || 'Falha no pré-cadastro do cliente.');
+      }
+
+      const valorBase = (passeio?.preco || 0) * selectedPeople;
+      const desconto = isGroup && selectedPeople >= 5 ? 0.1 : 0;
+      const valorFinal = valorBase * (1 - desconto);
+
+      const bookingData = {
+        passeioId: passeio?.id,
+        passeioNome: passeio?.nome,
+        data: selectedDate,
+        pessoas: selectedPeople,
+        tipoReserva: isGroup ? "grupo" : "individual",
+        valorOriginal: valorBase,
+        valorTotal: valorFinal,
+        desconto,
+        cliente: customerInfo,
+        preCadastro,
+      };
+
+      localStorage.setItem('bookingData', JSON.stringify(bookingData));
+      router.push('/checkout');
+    } catch (error) {
+      console.error('Erro no pré-cadastro de cliente:', error);
+      alert(error instanceof Error ? error.message : 'Não foi possível preparar o pagamento. Tente novamente.');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   if (loading) {
@@ -268,7 +299,7 @@ export default function PasseioDetalhes() {
                       <span className="text-sm text-gray-500">(127 avaliações)</span>
                     </div>
                     <div className="text-2xl font-bold text-green-600">
-                      R$ {passeio.preco.toFixed(2)}
+                      {formatCurrency(passeio.preco)}
                       <span className="text-sm text-gray-500 font-normal">/pessoa</span>
                     </div>
                   </div>
@@ -342,10 +373,10 @@ export default function PasseioDetalhes() {
               <CardHeader>
                 <CardTitle className="text-xl">Reserve seu passeio</CardTitle>
                 <div className="text-2xl font-bold text-green-600">
-                  R$ {valorFinal.toFixed(2)}
+                  {formatCurrency(valorFinal)}
                   {desconto > 0 && (
                     <div className="text-sm text-gray-500 line-through">
-                      R$ {valorTotal.toFixed(2)}
+                      {formatCurrency(valorTotal)}
                     </div>
                   )}
                 </div>
@@ -353,48 +384,92 @@ export default function PasseioDetalhes() {
               <CardContent className="space-y-4">
                 {/* Seleção de data */}
                 <div>
-                  <Label htmlFor="date">Data do passeio *</Label>
+                  <Label htmlFor="date" className="text-base font-semibold text-gray-900">Data do passeio *</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full justify-start text-left font-normal mt-1",
-                          !selectedDate && "text-muted-foreground"
+                          "w-full justify-start text-left font-normal mt-2 h-12 border-2 hover:border-orange-300",
+                          !selectedDate && "text-muted-foreground border-gray-200",
+                          selectedDate && "border-orange-200 bg-orange-50"
                         )}
                       >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        <CalendarIcon className="mr-3 h-5 w-5 text-orange-500" />
                         {selectedDate ? (
-                          format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+                          <span className="text-gray-900 font-medium">
+                            {isClient ? format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR }) : 'Data selecionada'}
+                          </span>
                         ) : (
-                          <span>Selecione uma data</span>
+                          <span className="text-gray-500">Selecione uma data</span>
                         )}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={selectedDate}
-                        onSelect={setSelectedDate}
-                        disabled={(date) => date < new Date() || date < new Date("1900-01-01")}
-                        initialFocus
-                      />
+                    <PopoverContent className="w-auto p-0 border-2 border-orange-200 shadow-lg" align="start">
+                      <div className="bg-white rounded-lg overflow-hidden">
+                        <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4">
+                          <h3 className="font-semibold text-lg">Escolha a data do seu passeio</h3>
+                          <p className="text-orange-100 text-sm">Selecione uma data disponível</p>
+                        </div>
+                        <div className="p-4">
+                          <Calendar
+                            mode="single"
+                            selected={selectedDate}
+                            onSelect={setSelectedDate}
+                            disabled={(date) => date < new Date() || date < new Date("1900-01-01")}
+                            initialFocus
+                            className="rounded-md border-0"
+                            classNames={{
+                              months: "space-y-4",
+                              month: "space-y-4",
+                              caption: "flex justify-center pt-1 relative items-center text-lg font-semibold",
+                              caption_label: "text-lg font-bold text-gray-900",
+                              nav: "space-x-1 flex items-center",
+                              nav_button: "h-8 w-8 bg-transparent p-0 opacity-70 hover:opacity-100 hover:bg-orange-100 rounded-md",
+                              nav_button_previous: "absolute left-1",
+                              nav_button_next: "absolute right-1",
+                              table: "w-full border-collapse space-y-1",
+                              head_row: "flex",
+                              head_cell: "text-gray-600 rounded-md w-10 font-medium text-sm text-center",
+                              row: "flex w-full mt-2",
+                              cell: "h-10 w-10 text-center text-sm p-0 relative [&:has([aria-selected])]:bg-orange-100 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                              day: "h-10 w-10 p-0 font-normal aria-selected:opacity-100 hover:bg-orange-100 rounded-md transition-colors",
+                              day_selected: "bg-orange-500 text-white hover:bg-orange-600 hover:text-white focus:bg-orange-600 focus:text-white font-semibold",
+                              day_today: "bg-orange-100 text-orange-900 font-semibold",
+                              day_outside: "text-gray-400 opacity-50",
+                              day_disabled: "text-gray-400 opacity-50 cursor-not-allowed",
+                              day_range_middle: "aria-selected:bg-orange-100 aria-selected:text-orange-900",
+                              day_hidden: "invisible",
+                            }}
+                          />
+                        </div>
+                        <div className="bg-gray-50 px-4 py-3 border-t">
+                          <p className="text-xs text-gray-600 text-center">
+                            ✨ Disponibilidade em tempo real • Confirmação imediata
+                          </p>
+                        </div>
+                      </div>
                     </PopoverContent>
                   </Popover>
                 </div>
 
                 {/* Tipo de reserva */}
                 <div>
-                  <Label>Tipo de reserva</Label>
-                  <div className="flex gap-2 mt-1">
+                  <Label className="text-base font-semibold text-gray-900">Tipo de reserva</Label>
+                  <div className="flex gap-2 mt-2">
                     <Button
                       type="button"
                       variant={!isGroup ? "default" : "outline"}
                       size="sm"
                       onClick={() => {setIsGroup(false); setSelectedPeople(1);}}
-                      className="flex-1"
+                      className={cn(
+                        "flex-1 h-11 border-2 transition-all",
+                        !isGroup 
+                          ? "bg-orange-500 hover:bg-orange-600 text-white border-orange-500" 
+                          : "border-gray-200 hover:border-orange-300 hover:bg-orange-50"
+                      )}
                     >
-                      <User className="h-4 w-4 mr-1" />
+                      <User className="h-4 w-4 mr-2" />
                       Individual
                     </Button>
                     <Button
@@ -402,29 +477,41 @@ export default function PasseioDetalhes() {
                       variant={isGroup ? "default" : "outline"}
                       size="sm"
                       onClick={() => {setIsGroup(true); setSelectedPeople(5);}}
-                      className="flex-1"
+                      className={cn(
+                        "flex-1 h-11 border-2 transition-all",
+                        isGroup 
+                          ? "bg-orange-500 hover:bg-orange-600 text-white border-orange-500" 
+                          : "border-gray-200 hover:border-orange-300 hover:bg-orange-50"
+                      )}
                     >
-                      <Users className="h-4 w-4 mr-1" />
+                      <Users className="h-4 w-4 mr-2" />
                       Grupo
+                      {isGroup && <Badge className="ml-2 bg-green-500 text-white text-xs">10% OFF</Badge>}
                     </Button>
                   </div>
                 </div>
 
                 {/* Número de pessoas */}
                 <div>
-                  <Label htmlFor="people">Número de pessoas</Label>
+                  <Label htmlFor="people" className="text-base font-semibold text-gray-900">Número de pessoas</Label>
                   <Select
                     value={selectedPeople.toString()}
                     onValueChange={(value) => setSelectedPeople(Number(value))}
                   >
-                    <SelectTrigger className="mt-1">
+                    <SelectTrigger className="mt-2 h-12 border-2 hover:border-orange-300 focus:border-orange-500">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="border-2 border-orange-200">
                       {Array.from({ length: passeio.capacidadeMaxima || 20 }, (_, i) => i + 1).map((num) => (
-                        <SelectItem key={num} value={num.toString()}>
-                          {num} {num === 1 ? 'pessoa' : 'pessoas'}
-                          {num >= 5 && ' (Desconto 10%)'}
+                        <SelectItem key={num} value={num.toString()} className="hover:bg-orange-50">
+                          <div className="flex items-center justify-between w-full">
+                            <span>{num} {num === 1 ? 'pessoa' : 'pessoas'}</span>
+                            {num >= 5 && (
+                              <Badge className="ml-2 bg-green-500 text-white text-xs">
+                                10% OFF
+                              </Badge>
+                            )}
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -433,51 +520,51 @@ export default function PasseioDetalhes() {
 
                 {/* Informações do cliente */}
                 <div className="border-t pt-4">
-                  <h4 className="font-semibold mb-3">Suas informações</h4>
+                  <h4 className="text-lg font-semibold mb-4 text-gray-900">Suas informações</h4>
                   
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div>
-                      <Label htmlFor="nome">Nome completo *</Label>
+                      <Label htmlFor="nome" className="text-sm font-semibold text-gray-900">Nome completo *</Label>
                       <Input
                         id="nome"
-                        placeholder="Seu nome"
+                        placeholder="Digite seu nome completo"
                         value={customerInfo.nome}
                         onChange={(e) => setCustomerInfo({...customerInfo, nome: e.target.value})}
-                        className="mt-1"
+                        className="mt-2 h-11 border-2 hover:border-orange-300 focus:border-orange-500"
                       />
                     </div>
 
                     <div>
-                      <Label htmlFor="email">Email *</Label>
+                      <Label htmlFor="email" className="text-sm font-semibold text-gray-900">Email *</Label>
                       <Input
                         id="email"
                         type="email"
                         placeholder="seu@email.com"
                         value={customerInfo.email}
                         onChange={(e) => setCustomerInfo({...customerInfo, email: e.target.value})}
-                        className="mt-1"
+                        className="mt-2 h-11 border-2 hover:border-orange-300 focus:border-orange-500"
                       />
                     </div>
 
                     <div>
-                      <Label htmlFor="telefone">Telefone</Label>
+                      <Label htmlFor="telefone" className="text-sm font-semibold text-gray-900">Telefone</Label>
                       <Input
                         id="telefone"
                         placeholder="(11) 99999-9999"
                         value={customerInfo.telefone}
                         onChange={(e) => setCustomerInfo({...customerInfo, telefone: e.target.value})}
-                        className="mt-1"
+                        className="mt-2 h-11 border-2 hover:border-orange-300 focus:border-orange-500"
                       />
                     </div>
 
                     <div>
-                      <Label htmlFor="observacoes">Observações</Label>
+                      <Label htmlFor="observacoes" className="text-sm font-semibold text-gray-900">Observações</Label>
                       <Textarea
                         id="observacoes"
-                        placeholder="Alguma solicitação especial?"
+                        placeholder="Alguma solicitação especial ou informação importante?"
                         value={customerInfo.observacoes}
                         onChange={(e) => setCustomerInfo({...customerInfo, observacoes: e.target.value})}
-                        className="mt-1 resize-none"
+                        className="mt-2 border-2 hover:border-orange-300 focus:border-orange-500 resize-none"
                         rows={3}
                       />
                     </div>
@@ -486,35 +573,46 @@ export default function PasseioDetalhes() {
 
                 {/* Resumo do valor */}
                 <div className="border-t pt-4">
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span>R$ {passeio.preco.toFixed(2)} × {selectedPeople}</span>
-                      <span>R$ {valorTotal.toFixed(2)}</span>
+                  <h5 className="font-semibold text-gray-900 mb-3">Resumo da reserva</h5>
+                  <div className="space-y-3 text-sm bg-gray-50 rounded-lg p-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">{formatCurrency(passeio.preco)} × {selectedPeople} {selectedPeople === 1 ? 'pessoa' : 'pessoas'}</span>
+                      <span className="font-medium">{formatCurrency(valorTotal)}</span>
                     </div>
                     {desconto > 0 && (
-                      <div className="flex justify-between text-green-600">
-                        <span>Desconto grupo (10%)</span>
-                        <span>-R$ {(valorTotal * desconto).toFixed(2)}</span>
+                      <div className="flex justify-between items-center text-green-600">
+                        <span className="flex items-center gap-1">
+                          🎉 Desconto grupo (10%)
+                        </span>
+                        <span className="font-medium">-{formatCurrency(valorTotal * desconto)}</span>
                       </div>
                     )}
-                    <div className="flex justify-between font-semibold text-lg border-t pt-2">
-                      <span>Total</span>
-                      <span>R$ {valorFinal.toFixed(2)}</span>
+                    <div className="border-t border-gray-200 pt-3">
+                      <div className="flex justify-between items-center font-bold text-lg">
+                        <span className="text-gray-900">Total</span>
+                        <span className="text-orange-600">{formatCurrency(valorFinal)}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 <Button
                   onClick={handleBooking}
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3"
+                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-4 text-lg shadow-lg hover:shadow-xl transition-all duration-200"
                   size="lg"
+                  disabled={processing}
                 >
-                  Continuar para pagamento
+                  {processing ? 'Preparando...' : '🎯 Continuar para pagamento'}
                 </Button>
 
-                <p className="text-xs text-gray-500 text-center">
-                  Você não será cobrado ainda. Confirme os detalhes na próxima etapa.
-                </p>
+                <div className="text-center space-y-1">
+                  <p className="text-xs text-gray-500">
+                    🔒 Você não será cobrado ainda. Confirme os detalhes na próxima etapa.
+                  </p>
+                  <p className="text-xs text-green-600 font-medium">
+                    ✅ Cancelamento gratuito até 24h antes
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </motion.div>

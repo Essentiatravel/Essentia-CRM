@@ -8,14 +8,16 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, UserPlus, MapPin, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function RegisterPage() {
+  const { signup } = useAuth();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -25,9 +27,9 @@ export default function RegisterPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
     if (error) setError("");
   };
@@ -72,36 +74,24 @@ export default function RegisterPage() {
     setIsLoading(true);
     setError("");
 
-    try {
-      const response = await fetch('/api/users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          password: formData.password,
-          userType: 'cliente'
-        }),
-      });
+    const { error: signupError } = await signup({
+      email: formData.email,
+      password: formData.password,
+      nome: `${formData.firstName} ${formData.lastName}`.trim(),
+      userType: "cliente",
+    });
 
-      if (response.ok) {
-        setSuccess("Conta criada com sucesso! Redirecionando...");
-        setTimeout(() => {
-          window.location.href = '/login';
-        }, 2000);
-      } else {
-        const errorData = await response.json();
-        setError(errorData.error || "Erro ao criar conta");
-      }
-    } catch (error) {
-      console.error('Erro ao criar conta:', error);
-      setError("Erro interno do servidor");
-    } finally {
+    if (signupError) {
+      setError(signupError);
       setIsLoading(false);
+      return;
     }
+
+    setSuccess("Conta criada com sucesso! Verifique seu email para confirmar a conta.");
+    setIsLoading(false);
+    setTimeout(() => {
+      window.location.href = "/login";
+    }, 2000);
   };
 
   const handleGoogleSignIn = () => {
@@ -125,28 +115,20 @@ export default function RegisterPage() {
                 <MapPin className="h-8 w-8 text-white" />
               </div>
             </div>
-            <CardTitle className="text-2xl font-bold text-gray-900">
-              Criar Conta
-            </CardTitle>
-            <p className="text-gray-600 mt-2">
-              Junte-se ao TourGuide e descubra a Itália
-            </p>
+            <CardTitle className="text-2xl font-bold text-gray-900">Criar Conta</CardTitle>
+            <p className="text-gray-600 mt-2">Junte-se ao TourGuide e descubra a Itália</p>
           </CardHeader>
 
           <CardContent className="space-y-6">
             {error && (
               <Alert className="border-red-200 bg-red-50">
-                <AlertDescription className="text-red-700">
-                  {error}
-                </AlertDescription>
+                <AlertDescription className="text-red-700">{error}</AlertDescription>
               </Alert>
             )}
 
             {success && (
               <Alert className="border-green-200 bg-green-50">
-                <AlertDescription className="text-green-700">
-                  {success}
-                </AlertDescription>
+                <AlertDescription className="text-green-700">{success}</AlertDescription>
               </Alert>
             )}
 
@@ -240,11 +222,7 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              <Button
-                type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                disabled={isLoading}
-              >
+              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={isLoading}>
                 {isLoading ? (
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

@@ -1,4 +1,4 @@
-# 🌍 TourGuide CRM
+# Essentia-CRM
 
 > Sistema de Gerenciamento de Relacionamento com Cliente para Empresas de Turismo
 

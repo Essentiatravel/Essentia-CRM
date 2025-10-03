@@ -9,14 +9,16 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, LogIn, MapPin, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirect') || '/admin';
+  const redirectTo = searchParams.get("redirect") || "/admin";
+  const { login } = useAuth();
 
   const [formData, setFormData] = useState({
     email: "",
-    password: ""
+    password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -24,9 +26,9 @@ export default function LoginPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
     if (error) setError("");
   };
@@ -55,46 +57,21 @@ export default function LoginPage() {
     setIsLoading(true);
     setError("");
 
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+    const { error: loginError } = await login(formData.email, formData.password);
 
-      if (response.ok) {
-        const data = await response.json();
-
-        localStorage.setItem('auth-user', JSON.stringify(data.user));
-
-        // Redirecionar para a página solicitada ou dashboard baseado no tipo de usuário
-        if (redirectTo && redirectTo !== '/login') {
-          window.location.href = redirectTo;
-        } else if (data.user.userType === 'admin') {
-          window.location.href = '/admin';
-        } else if (data.user.userType === 'guia') {
-          window.location.href = '/guia';
-        } else if (data.user.userType === 'cliente') {
-          window.location.href = '/cliente';
-        } else {
-          window.location.href = '/';
-        }
-      } else {
-        const errorData = await response.json();
-        setError(errorData.error || "Credenciais inválidas");
-      }
-    } catch (error) {
-      console.error('Erro ao fazer login:', error);
-      setError("Erro interno do servidor");
-    } finally {
+    if (loginError) {
+      setError(loginError === "Invalid login credentials" ? "Credenciais inválidas" : loginError);
       setIsLoading(false);
+      return;
     }
+
+    // Redirecionar baseada no destino ou dashboard específico
+    const destination = redirectTo && redirectTo !== "/login" ? redirectTo : "/admin";
+    window.location.href = destination;
   };
 
   const handleGoogleSignIn = () => {
-    window.location.href = '/api/auth/google';
+    window.location.href = "/api/auth/google";
   };
 
   return (
@@ -114,20 +91,14 @@ export default function LoginPage() {
                 <MapPin className="h-8 w-8 text-white" />
               </div>
             </div>
-            <CardTitle className="text-2xl font-bold text-gray-900">
-              Entrar na sua conta
-            </CardTitle>
-            <p className="text-gray-600 mt-2">
-              Bem-vindo de volta ao TourGuide
-            </p>
+            <CardTitle className="text-2xl font-bold text-gray-900">Entrar na sua conta</CardTitle>
+            <p className="text-gray-600 mt-2">Bem-vindo de volta ao TourGuide</p>
           </CardHeader>
 
           <CardContent className="space-y-6">
             {error && (
               <Alert className="border-red-200 bg-red-50">
-                <AlertDescription className="text-red-700">
-                  {error}
-                </AlertDescription>
+                <AlertDescription className="text-red-700">{error}</AlertDescription>
               </Alert>
             )}
 
@@ -161,7 +132,7 @@ export default function LoginPage() {
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={() => setShowPassword((prev) => !prev)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -205,12 +176,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <Button
-              onClick={handleGoogleSignIn}
-              variant="outline"
-              className="w-full"
-              disabled={isLoading}
-            >
+            <Button onClick={handleGoogleSignIn} variant="outline" className="w-full" disabled={isLoading}>
               <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
                 <path
                   fill="currentColor"
@@ -234,18 +200,12 @@ export default function LoginPage() {
 
             <div className="text-center">
               <p className="text-sm text-gray-600">
-                Não tem uma conta?{" "}
-                <a href="/register" className="font-medium text-blue-600 hover:text-blue-500">
-                  Criar conta
-                </a>
+                Não tem uma conta? <a href="/register" className="font-medium text-blue-600 hover:text-blue-500">Criar conta</a>
               </p>
             </div>
 
             <div className="text-center">
-              <a
-                href="/"
-                className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 transition-colors"
-              >
+              <a href="/" className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 transition-colors">
                 <ArrowLeft className="h-4 w-4" />
                 Voltar ao início
               </a>

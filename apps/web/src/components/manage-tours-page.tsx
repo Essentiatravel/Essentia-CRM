@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,13 +40,12 @@ interface Tour {
   specialRequirements?: string;
 }
 
-// Dados mockados dos passeios
 const mockTours: Tour[] = [
   {
     id: "1",
     name: "City Tour Histórico",
     location: "Centro Histórico",
-    price: 150.00,
+    price: 150.0,
     duration: 4,
     status: "Ativo",
     type: "Histórico",
@@ -54,7 +54,7 @@ const mockTours: Tour[] = [
     id: "2",
     name: "Aventura na Natureza",
     location: "Parque Nacional",
-    price: 280.00,
+    price: 280.0,
     duration: 8,
     status: "Ativo",
     type: "Aventura",
@@ -63,7 +63,7 @@ const mockTours: Tour[] = [
     id: "3",
     name: "Tour Gastronômico",
     location: "Distrito Gastronômico",
-    price: 200.00,
+    price: 200.0,
     duration: 5,
     status: "Ativo",
     type: "Gastronômico",
@@ -72,7 +72,7 @@ const mockTours: Tour[] = [
     id: "4",
     name: "Passeio Cultural",
     location: "Bairro Cultural",
-    price: 180.00,
+    price: 180.0,
     duration: 6,
     status: "Ativo",
     type: "Cultural",
@@ -81,7 +81,7 @@ const mockTours: Tour[] = [
     id: "5",
     name: "Vida Noturna Premium",
     location: "Centro de Entretenimento",
-    price: 250.00,
+    price: 250.0,
     duration: 6,
     status: "Ativo",
     type: "Romântico",
@@ -90,7 +90,7 @@ const mockTours: Tour[] = [
     id: "6",
     name: "Tour pelo Centro Histórico",
     location: "Centro Histórico",
-    price: 75.00,
+    price: 75.0,
     duration: 3,
     status: "Ativo",
     type: "Histórico",
@@ -99,7 +99,7 @@ const mockTours: Tour[] = [
     id: "7",
     name: "Aventura na Floresta",
     location: "Parque Nacional",
-    price: 120.00,
+    price: 120.0,
     duration: 6,
     status: "Ativo",
     type: "Natureza",
@@ -108,18 +108,16 @@ const mockTours: Tour[] = [
     id: "8",
     name: "Tour Gastronômico",
     location: "Mercado Central",
-    price: 95.00,
+    price: 95.0,
     duration: 4,
     status: "Ativo",
     type: "Gastronômico",
   },
 ];
 
-// Componente da barra lateral
-const Sidebar: React.FC = () => (
+const Sidebar: React.FC<{ user: any; onLogout: () => Promise<void> }> = ({ user, onLogout }) => (
   <div className="hidden lg:block w-64 bg-white border-r border-gray-200 h-screen fixed left-0 top-0">
     <div className="p-6">
-      {/* Logo */}
       <div className="flex items-center gap-2 mb-8">
         <div className="p-2 bg-blue-600 rounded-lg">
           <MapPin className="h-6 w-6 text-white" />
@@ -129,21 +127,19 @@ const Sidebar: React.FC = () => (
           <p className="text-sm text-gray-600">Administrador</p>
         </div>
       </div>
-
-      {/* Navegação */}
       <div className="mb-8">
         <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
           Navegação
         </h3>
         <nav className="space-y-2">
           {[
-            { icon: "Home", label: "Dashboard", active: false, href: "/admin" },
-            { icon: "Calendar", label: "Agendamentos", active: false, href: "/admin/agendamentos" },
-            { icon: "CalendarDays", label: "Calendário Global", active: false, href: "/admin/calendario" },
-            { icon: "Users", label: "Guias", active: false, href: "/admin/guias" },
-            { icon: "Heart", label: "Clientes", active: false, href: "/admin/clientes" },
-            { icon: "MapPin", label: "Passeios", active: true, href: "/admin/passeios" },
-            { icon: "DollarSign", label: "Financeiro", active: false, href: "/admin/financeiro" },
+            { icon: Home, label: "Dashboard", href: "/admin" },
+            { icon: Calendar, label: "Agendamentos", href: "/admin/agendamentos" },
+            { icon: CalendarDays, label: "Calendário Global", href: "/admin/calendario" },
+            { icon: Users, label: "Guias", href: "/admin/guias" },
+            { icon: Heart, label: "Clientes", href: "/admin/clientes" },
+            { icon: MapPin, label: "Passeios", href: "/admin/passeios", active: true },
+            { icon: DollarSign, label: "Financeiro", href: "/admin/financeiro" },
           ].map((item) => (
             <a
               key={item.label}
@@ -154,56 +150,45 @@ const Sidebar: React.FC = () => (
                   : "text-gray-700 hover:bg-gray-50"
               }`}
             >
-                             {item.icon === "Home" && <Home className="h-4 w-4" />}
-               {item.icon === "Calendar" && <Calendar className="h-4 w-4" />}
-               {item.icon === "CalendarDays" && <CalendarDays className="h-4 w-4" />}
-               {item.icon === "Users" && <Users className="h-4 w-4" />}
-               {item.icon === "Heart" && <Heart className="h-4 w-4" />}
-               {item.icon === "MapPin" && <MapPin className="h-4 w-4" />}
-               {item.icon === "DollarSign" && <DollarSign className="h-4 w-4" />}
+              <item.icon className="h-4 w-4" />
               {item.label}
             </a>
           ))}
         </nav>
       </div>
-
-      {/* Perfil do usuário */}
       <div className="absolute bottom-6 left-6 right-6">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-            <span className="text-sm font-medium text-gray-700">E</span>
+            <span className="text-sm font-medium text-gray-700">
+              {user?.nome?.charAt(0)?.toUpperCase() || "A"}
+            </span>
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-900">ELISSON UZUAL</p>
-            <p className="text-xs text-gray-600">uzualelisson@gmail.com</p>
+            <p className="text-sm font-medium text-gray-900">{user?.nome || "Administrador"}</p>
+            <p className="text-xs text-gray-600">{user?.email || "admin@turguide.com"}</p>
           </div>
         </div>
-                 <Button variant="outline" size="sm" className="w-full">
-           <LogOut className="h-4 w-4 mr-2" />
-           Sair
-         </Button>
+        <Button variant="outline" size="sm" className="w-full" onClick={onLogout}>
+          <LogOut className="h-4 w-4 mr-2" />
+          Sair
+        </Button>
       </div>
     </div>
   </div>
 );
 
-// Componente do dropdown de ações
 const ActionDropdown: React.FC<{ tour: Tour; onEditTour: (tourId: string) => void }> = ({ tour, onEditTour }) => {
   const [isOpen, setIsOpen] = useState(false);
-
-  // Fechar dropdown quando clicar fora
-  React.useEffect(() => {
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
       if (!target.closest('.dropdown-container')) {
         setIsOpen(false);
       }
     };
-
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
-
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
@@ -211,140 +196,148 @@ const ActionDropdown: React.FC<{ tour: Tour; onEditTour: (tourId: string) => voi
 
   return (
     <div className="relative dropdown-container">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => setIsOpen(!isOpen)}
-        className="h-8 w-8 p-0"
-      >
+      <Button variant="ghost" size="sm" onClick={() => setIsOpen(!isOpen)}>
         <MoreVertical className="h-4 w-4" />
       </Button>
-      
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border z-10">
-          <div className="py-1">
-            <button 
-              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              onClick={() => {
-                console.log("Visualizar passeio:", tour.id);
-                setIsOpen(false);
-              }}
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              Visualizar
-            </button>
-            <button 
-              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              onClick={() => {
-                onEditTour(tour.id);
-                setIsOpen(false);
-              }}
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              Editar
-            </button>
-            <button 
-              className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-              onClick={() => {
-                console.log("Excluir passeio:", tour.id);
-                setIsOpen(false);
-              }}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Excluir
-            </button>
-          </div>
+        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border">
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-2"
+            onClick={() => {
+              onEditTour(tour.id);
+              setIsOpen(false);
+            }}
+          >
+            <Edit className="h-4 w-4" /> Editar
+          </Button>
+          <Button variant="ghost" className="w-full justify-start gap-2">
+            <Eye className="h-4 w-4" /> Visualizar
+          </Button>
+          <Button variant="ghost" className="w-full justify-start gap-2 text-red-600">
+            <Trash2 className="h-4 w-4" /> Excluir
+          </Button>
         </div>
       )}
     </div>
   );
 };
 
-export default function ManageToursPage() {
+const ManageToursPage: React.FC = () => {
+  const { user, logout } = useAuth();
   const [isAddTourModalOpen, setIsAddTourModalOpen] = useState(false);
   const [isEditTourModalOpen, setIsEditTourModalOpen] = useState(false);
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
-  const [tours, setTours] = useState<Tour[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [tours, setTours] = useState<Tour[]>(mockTours);
 
-  // Carregar passeios do banco
-  React.useEffect(() => {
-    const fetchTours = async () => {
-      try {
-        const response = await fetch('/api/passeios');
-        if (response.ok) {
-          const data = await response.json();
-          const formattedTours: Tour[] = data.map((passeio: any) => ({
-            id: passeio.id,
-            name: passeio.nome,
-            location: passeio.categoria,
-            price: passeio.preco,
-            duration: parseInt(passeio.duracao.replace('h', '')),
-            status: passeio.ativo ? 'Ativo' : 'Inativo',
-            type: passeio.categoria,
-          }));
-          setTours(formattedTours);
-        }
-      } catch (error) {
-        console.error('Erro ao carregar passeios:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
+  // Carregar passeios ao montar o componente
+  useEffect(() => {
     fetchTours();
   }, []);
 
+  const fetchTours = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/passeios");
+      if (response.ok) {
+        const data = await response.json();
+        setTours(
+          data.map((tour: any) => ({
+            id: tour.id,
+            name: tour.nome,
+            location: tour.categoria,
+            price: tour.preco,
+            duration: parseInt(tour.duracao?.replace("h", "") || "0", 10),
+            status: tour.ativo ? "Ativo" : "Inativo",
+            type: tour.categoria,
+            description: tour.descricao,
+            maxPeople: tour.capacidadeMaxima,
+            languages: tour.idiomas || [],
+            includedItems: tour.inclusoes || [],
+            images: tour.imagens || [],
+            specialRequirements: tour.requisitosEspeciais || "",
+          }))
+        );
+      } else {
+        console.error("Erro ao carregar passeios");
+      }
+    } catch (error) {
+      console.error("Erro ao buscar passeios:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAddTour = async (tourData: any) => {
     try {
-      const response = await fetch('/api/passeios', {
-        method: 'POST',
+      const response = await fetch("/api/passeios", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(tourData),
       });
 
       if (response.ok) {
-        const result = await response.json();
-        console.log('Passeio criado:', result);
-        // Recarregar a página para mostrar o novo passeio
-        window.location.reload();
+        const newTour = await response.json();
+        setTours((prevTours) => [
+          {
+            id: newTour.id,
+            name: newTour.nome,
+            location: newTour.categoria,
+            price: newTour.preco,
+            duration: parseInt(newTour.duracao?.replace("h", "") || "0", 10),
+            status: newTour.ativo ? "Ativo" : "Inativo",
+            type: newTour.categoria,
+            description: newTour.descricao,
+            maxPeople: newTour.capacidadeMaxima,
+            languages: newTour.idiomas || [],
+            includedItems: newTour.inclusoes || [],
+            images: newTour.imagens || [],
+            specialRequirements: newTour.requisitosEspeciais || "",
+          },
+          ...prevTours,
+        ]);
+        setIsAddTourModalOpen(false);
       } else {
-        console.error('Erro ao criar passeio');
+        console.error("Erro ao criar passeio");
       }
     } catch (error) {
-      console.error('Erro ao criar passeio:', error);
+      console.error("Erro ao criar passeio:", error);
     }
   };
 
   const handleEditTour = async (tourId: string) => {
     try {
-      // Buscar dados completos do passeio
+      console.log('🔍 Buscando passeio:', tourId);
       const response = await fetch(`/api/passeios/${tourId}`);
+      
+      console.log('📡 Response status:', response.status);
+      
       if (response.ok) {
         const passeioData = await response.json();
+        console.log('✅ Dados do passeio:', passeioData);
         
-        // Formatar dados para o modal
-        // Função helper para fazer parsing seguro de JSON
-        const safeJsonParse = (value: any, fallback: any[] = []) => {
+        const safeJsonParse = (value: unknown, fallback: string[] = []) => {
           if (!value) return fallback;
-          try {
-            if (typeof value === 'string') {
-              return JSON.parse(value);
+          if (Array.isArray(value)) return value;
+          if (typeof value === "object") return fallback;
+          if (typeof value === "string") {
+            const trimmed = value.trim();
+            if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+              try {
+                return JSON.parse(trimmed);
+              } catch (e) {
+                console.warn("Erro ao fazer parse do JSON:", trimmed, e);
+              }
             }
-            if (Array.isArray(value)) {
-              return value;
-            }
-            return fallback;
-          } catch (error) {
-            console.warn('Erro ao fazer parse JSON:', value, error);
-            // Se falhar o parse e for string, tenta separar por vírgula
-            if (typeof value === 'string') {
-              return value.split(',').map(item => item.trim()).filter(item => item);
-            }
-            return fallback;
+            return trimmed
+              .split(",")
+              .map((item) => item.trim())
+              .filter((item) => item);
           }
+          return fallback;
         };
 
         const formattedTour: Tour = {
@@ -352,68 +345,63 @@ export default function ManageToursPage() {
           name: passeioData.nome,
           location: passeioData.categoria,
           price: passeioData.preco,
-          duration: parseInt(passeioData.duracao.replace('h', '')),
-          status: passeioData.ativo ? 'Ativo' : 'Inativo',
+          duration: parseInt(passeioData.duracao?.replace("h", "") || "0", 10),
+          status: passeioData.ativo ? "Ativo" : "Inativo",
           type: passeioData.categoria,
-          description: passeioData.descricao || '',
-          maxPeople: passeioData.capacidadeMaxima || 10,
-          languages: safeJsonParse(passeioData.idiomas, []),
-          includedItems: safeJsonParse(passeioData.inclusoes, []),
-          images: safeJsonParse(passeioData.imagens, []),
-          specialRequirements: passeioData.requisitosEspeciais || '',
+          description: passeioData.descricao || "",
+          maxPeople: passeioData.capacidadeMaxima || 0,
+          languages: safeJsonParse(passeioData.idiomas),
+          includedItems: safeJsonParse(passeioData.inclusoes),
+          images: safeJsonParse(passeioData.imagens),
+          specialRequirements: passeioData.requisitosEspeciais || "",
         };
-        
+
+        console.log('📝 Tour formatado:', formattedTour);
         setSelectedTour(formattedTour);
         setIsEditTourModalOpen(true);
       } else {
-        console.error('Erro ao buscar dados do passeio');
+        const errorData = await response.json().catch(() => ({}));
+        console.error("❌ Erro ao buscar dados do passeio:", response.status, errorData);
+        alert(`Erro ao buscar passeio: ${errorData.error || 'Erro desconhecido'}`);
       }
     } catch (error) {
-      console.error('Erro ao buscar passeio:', error);
+      console.error("❌ Erro ao buscar passeio:", error);
+      alert(`Erro ao buscar passeio: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     }
   };
 
   const handleUpdateTour = async (tourData: any) => {
     try {
       const response = await fetch(`/api/passeios/${selectedTour?.id}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(tourData),
       });
 
       if (response.ok) {
-        const result = await response.json();
-        console.log('Passeio atualizado:', result);
         setIsEditTourModalOpen(false);
         setSelectedTour(null);
-        // Recarregar a página para mostrar as alterações
-        window.location.reload();
+        await fetchTours();
       } else {
-        console.error('Erro ao atualizar passeio');
+        console.error("Erro ao atualizar passeio");
       }
     } catch (error) {
-      console.error('Erro ao atualizar passeio:', error);
+      console.error("Erro ao atualizar passeio:", error);
     }
   };
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Navegação mobile */}
-      <AdminMobileNav 
-        userName="ELISSON UZUAL" 
-        userEmail="uzualelisson@gmail.com"
-        onLogout={() => window.location.href = '/api/logout'} 
+      <AdminMobileNav
+        userName={user?.nome || "Administrador"}
+        userEmail={user?.email || "admin@turguide.com"}
+        onLogout={logout}
       />
-      
-      {/* Barra lateral */}
-      <Sidebar />
-
-      {/* Conteúdo principal */}
-      <div className="flex-1 lg:ml-64 ml-0">
+      <Sidebar user={user} onLogout={logout} />
+      <div className="flex-1 lg:ml-05 ml-0">
         <div className="p-4 lg:p-8">
-          {/* Cabeçalho */}
           <div className="mb-8">
             <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
               Gerenciar Passeios
@@ -422,19 +410,12 @@ export default function ManageToursPage() {
               Adicione, edite e organize todos os passeios oferecidos.
             </p>
           </div>
-
-          {/* Botão Novo Passeio */}
           <div className="flex justify-end mb-6">
-            <Button
-              onClick={() => setIsAddTourModalOpen(true)}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
+            <Button onClick={() => setIsAddTourModalOpen(true)} className="bg-blue-600 hover:bg-blue-700">
               <Plus className="h-4 w-4 mr-2" />
               Novo Passeio
             </Button>
           </div>
-
-          {/* Tabela de Passeios */}
           <Card>
             <CardContent className="p-0">
               {loading ? (
@@ -462,61 +443,41 @@ export default function ManageToursPage() {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Status
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Ações
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="divide-y">
                       {tours.map((tour) => (
-                        <tr key={tour.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">
-                                {tour.name}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {tour.type}
-                              </div>
-                            </div>
+                        <tr key={tour.id}>
+                          <td className="px-6 py-4">
+                            <p className="font-medium text-gray-900">{tour.name}</p>
+                            <p className="text-sm text-gray-500">{tour.type}</p>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <MapPin className="h-4 w-4 text-gray-400 mr-2" />
-                              <span className="text-sm text-gray-900">
-                                {tour.location}
-                              </span>
-                            </div>
+                          <td className="px-6 py-4">
+                            <span className="text-gray-600">{tour.location}</span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <DollarSign className="h-4 w-4 text-gray-400 mr-1" />
-                              <span className="text-sm text-gray-900">
-                                R$ {tour.price.toFixed(2)}
-                              </span>
-                            </div>
+                          <td className="px-6 py-4">
+                            <span className="text-gray-900 font-medium">
+                              R$ {tour.price.toFixed(2)}
+                            </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <Clock className="h-4 w-4 text-gray-400 mr-1" />
-                              <span className="text-sm text-gray-900">
-                                {tour.duration}h
-                              </span>
-                            </div>
+                          <td className="px-6 py-4">
+                            <span className="text-gray-600">{tour.duration}h</span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <Badge 
-                              variant="secondary" 
-                              className={`${
-                                tour.status === "Ativo" 
-                                  ? "bg-green-100 text-green-800" 
-                                  : "bg-gray-100 text-gray-800"
-                              }`}
+                          <td className="px-6 py-4">
+                            <Badge
+                              className={
+                                tour.status === "Ativo"
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-gray-100 text-gray-600"
+                              }
                             >
                               {tour.status}
                             </Badge>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-6 py-4 text-right">
                             <ActionDropdown tour={tour} onEditTour={handleEditTour} />
                           </td>
                         </tr>
@@ -529,38 +490,25 @@ export default function ManageToursPage() {
           </Card>
         </div>
       </div>
-
-      {/* Modal para adicionar passeio */}
       <AddTourModal
+        key="add"
         isOpen={isAddTourModalOpen}
         onClose={() => setIsAddTourModalOpen(false)}
         onSubmit={handleAddTour}
       />
-
-      {/* Modal para editar passeio */}
       <AddTourModal
-        isOpen={isEditTourModalOpen}
+        key={selectedTour?.id || 'edit'}
+        isOpen={isEditTourModalOpen && !!selectedTour}
         onClose={() => {
           setIsEditTourModalOpen(false);
           setSelectedTour(null);
         }}
         onSubmit={handleUpdateTour}
-        initialData={selectedTour ? {
-          name: selectedTour.name,
-          location: selectedTour.location,
-          description: selectedTour.description || '',
-          type: selectedTour.type,
-          duration: selectedTour.duration,
-          price: selectedTour.price,
-          maxPeople: selectedTour.maxPeople || 10,
-          languages: selectedTour.languages || [],
-          includedItems: selectedTour.includedItems || [],
-          images: selectedTour.images || [],
-          specialRequirements: selectedTour.specialRequirements || '',
-          status: selectedTour.status,
-        } : undefined}
-        isEdit={true}
+        initialData={selectedTour || undefined}
+        isEdit={!!selectedTour}
       />
     </div>
   );
-}
+};
+
+export default ManageToursPage;

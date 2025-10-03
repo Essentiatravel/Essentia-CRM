@@ -1,17 +1,20 @@
 // Replit Auth integration - PostgreSQL database configuration
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
+import postgres from "postgres";
+import { drizzle } from "drizzle-orm/postgres-js";
 import * as schema from "./schema";
 
-neonConfig.webSocketConstructor = ws;
+const connectionString = process.env.SUPABASE_DB_URL ?? process.env.DATABASE_URL;
 
-if (!process.env.DATABASE_URL) {
+if (!connectionString) {
   throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
+    "SUPABASE_DB_URL (or DATABASE_URL) must be set. Did you forget to provide your Supabase Postgres connection string?",
   );
 }
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db = drizzle({ client: pool, schema });
+const client = postgres(connectionString, {
+  ssl: "require",
+  max: 10,
+});
+
+export const db = drizzle(client, { schema });
 

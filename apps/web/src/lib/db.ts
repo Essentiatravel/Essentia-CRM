@@ -1,23 +1,19 @@
-// Database connection for PostgreSQL in Replit
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
+import postgres from "postgres";
+import { drizzle } from "drizzle-orm/postgres-js";
 
-// Configuração para WebSocket no ambiente Neon
-neonConfig.webSocketConstructor = ws;
+const connectionString = process.env.SUPABASE_DB_URL ?? process.env.DATABASE_URL;
 
-// Verificar se a URL do banco está disponível
-if (!process.env.DATABASE_URL) {
+if (!connectionString) {
   throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a PostgreSQL database in Replit?",
+    "SUPABASE_DB_URL (or DATABASE_URL) must be set. Provide your Supabase Postgres connection string to connect to the database.",
   );
 }
 
-// Criar pool de conexões
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const client = postgres(connectionString, {
+  ssl: "require",
+  max: 5,
+});
 
-// Configurar Drizzle ORM
-export const db = drizzle({ client: pool });
+export const db = drizzle(client);
 
-// Schemas do banco
-export * from './db/schema';
+export * from "./db/schema";

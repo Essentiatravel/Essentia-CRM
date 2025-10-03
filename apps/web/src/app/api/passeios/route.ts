@@ -24,7 +24,19 @@ const passeios = pgTable("passeios", {
 export async function GET() {
   try {
     const todosPasseios = await db.select().from(passeios);
-    return NextResponse.json(todosPasseios);
+    
+    // Garantir que campos JSON sejam arrays
+    const passeiosFormatados = todosPasseios.map(p => ({
+      ...p,
+      imagens: Array.isArray(p.imagens) ? p.imagens : 
+               (typeof p.imagens === 'string' ? JSON.parse(p.imagens) : []),
+      inclusoes: Array.isArray(p.inclusoes) ? p.inclusoes :
+                 (typeof p.inclusoes === 'string' ? JSON.parse(p.inclusoes) : []),
+      idiomas: Array.isArray(p.idiomas) ? p.idiomas :
+               (typeof p.idiomas === 'string' ? JSON.parse(p.idiomas) : []),
+    }));
+    
+    return NextResponse.json(passeiosFormatados);
   } catch (error) {
     console.error('Erro ao buscar passeios:', error);
     return NextResponse.json(
@@ -47,9 +59,10 @@ export async function POST(request: Request) {
       preco: parseFloat(passeioData.price || passeioData.preco) || 0,
       duracao: `${passeioData.duration || passeioData.duracao}h`,
       categoria: passeioData.type || passeioData.categoria,
-      imagens: JSON.stringify(passeioData.images || []),
-      inclusoes: JSON.stringify(passeioData.includedItems || []),
-      idiomas: JSON.stringify(passeioData.languages || []),
+      // Armazenar como arrays nativos (Drizzle converte para JSONB)
+      imagens: passeioData.images || [],
+      inclusoes: passeioData.includedItems || [],
+      idiomas: passeioData.languages || [],
       capacidadeMaxima: parseInt(passeioData.maxPeople) || 20,
       ativo: 1
     };

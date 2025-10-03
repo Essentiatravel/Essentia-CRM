@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { X, Plus } from "lucide-react";
+import { X, Plus, Upload, Loader2 } from "lucide-react";
+import { useImageUpload } from "@/hooks/useImageUpload";
 
 interface AddTourModalProps {
   isOpen: boolean;
@@ -31,6 +32,8 @@ interface TourData {
 }
 
 export default function AddTourModal({ isOpen, onClose, onSubmit, initialData, isEdit = false }: AddTourModalProps) {
+  const { uploadImage, uploading, error, clearError } = useImageUpload();
+  
   const [formData, setFormData] = useState<TourData>(initialData || {
     name: "",
     location: "",
@@ -48,10 +51,14 @@ export default function AddTourModal({ isOpen, onClose, onSubmit, initialData, i
 
   // Atualizar formData quando initialData mudar (modo de edição)
   useEffect(() => {
+    console.log('🔄 AddTourModal useEffect:', { isEdit, isOpen, initialData });
+    
     if (initialData && isEdit) {
+      console.log('✅ Carregando dados para edição:', initialData);
       setFormData(initialData);
     } else if (!isEdit) {
       // Reset para modo de adição
+      console.log('➕ Modo de adição - resetando formulário');
       setFormData({
         name: "",
         location: "",
@@ -111,8 +118,6 @@ export default function AddTourModal({ isOpen, onClose, onSubmit, initialData, i
     }));
   };
 
-  const [uploadingImage, setUploadingImage] = useState(false);
-
   const addImage = () => {
     if (newImage.trim()) {
       setFormData(prev => ({
@@ -123,39 +128,20 @@ export default function AddTourModal({ isOpen, onClose, onSubmit, initialData, i
     }
   };
 
-  const uploadImage = async (file: File) => {
-    setUploadingImage(true);
-    try {
-      const formDataUpload = new FormData();
-      formDataUpload.append('file', file);
-
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formDataUpload,
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setFormData(prev => ({
-          ...prev,
-          images: [...prev.images, result.url]
-        }));
-      } else {
-        alert(result.error || 'Erro no upload da imagem');
-      }
-    } catch (error) {
-      console.error('Erro no upload:', error);
-      alert('Erro no upload da imagem');
-    } finally {
-      setUploadingImage(false);
+  const handleImageUpload = async (file: File) => {
+    const imageUrl = await uploadImage(file);
+    if (imageUrl) {
+      setFormData(prev => ({
+        ...prev,
+        images: [...prev.images, imageUrl]
+      }));
     }
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      uploadImage(file);
+      handleImageUpload(file);
     }
     // Resetar o valor para permitir selecionar o mesmo arquivo novamente
     event.target.value = '';
@@ -175,6 +161,13 @@ export default function AddTourModal({ isOpen, onClose, onSubmit, initialData, i
   };
 
   if (!isOpen) return null;
+
+  console.log('🎨 Renderizando AddTourModal:', { 
+    isEdit, 
+    isOpen, 
+    hasInitialData: !!initialData,
+    formData: formData.name ? `${formData.name} (${formData.price})` : 'VAZIO'
+  });
 
   return (
     <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -352,28 +345,41 @@ export default function AddTourModal({ isOpen, onClose, onSubmit, initialData, i
                 onChange={handleFileSelect}
                 className="hidden"
                 id="image-upload"
-                disabled={uploadingImage}
+                disabled={uploading}
               />
               <label 
                 htmlFor="image-upload" 
-                className={`cursor-pointer flex flex-col items-center gap-2 ${uploadingImage ? 'opacity-50' : 'hover:text-blue-600'}`}
+                className={`cursor-pointer flex flex-col items-center gap-2 ${uploading ? 'opacity-50' : 'hover:text-blue-600'}`}
               >
                 <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                  {uploadingImage ? (
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  {uploading ? (
+                    <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
                   ) : (
-                    <Plus className="h-6 w-6 text-gray-400" />
+                    <Upload className="h-6 w-6 text-gray-400" />
                   )}
                 </div>
                 <div className="text-sm">
                   <span className="font-medium text-blue-600">
-                    {uploadingImage ? 'Enviando...' : 'Clique para fazer upload'}
+                    {uploading ? 'Enviando...' : 'Clique para fazer upload'}
                   </span>
                   <span className="text-gray-500"> ou arraste uma imagem aqui</span>
                 </div>
                 <p className="text-xs text-gray-400">PNG, JPG, JPEG até 5MB</p>
               </label>
             </div>
+
+            {/* Mostrar erro se houver */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-sm text-red-600">{error}</p>
+                <button 
+                  onClick={clearError}
+                  className="text-xs text-red-500 hover:text-red-700 mt-1"
+                >
+                  Fechar
+                </button>
+              </div>
+            )}
 
             {/* Ou adicionar URL manual */}
             <div className="relative">

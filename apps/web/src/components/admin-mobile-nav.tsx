@@ -21,12 +21,14 @@ import { motion, AnimatePresence } from "framer-motion";
 interface MobileNavProps {
   userName: string;
   userEmail: string;
-  onLogout: () => void;
+  userType?: 'admin' | 'guia' | 'cliente';
+  onLogout: () => Promise<void>;
 }
 
 export const AdminMobileNav: React.FC<MobileNavProps> = ({
   userName,
   userEmail,
+  userType,
   onLogout,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -35,12 +37,20 @@ export const AdminMobileNav: React.FC<MobileNavProps> = ({
     { icon: Home, label: "Dashboard", href: "/admin" },
     { icon: Calendar, label: "Agendamentos", href: "/admin/agendamentos" },
     { icon: CalendarDays, label: "Calendário Global", href: "/admin/calendario" },
-    { icon: User, label: "Usuários", href: "/admin/usuarios" },
+    { icon: User, label: "Usuários", href: "/admin/usuarios", adminOnly: true },
     { icon: Users, label: "Guias", href: "/admin/guias" },
     { icon: Heart, label: "Clientes", href: "/admin/clientes" },
     { icon: MapPin, label: "Passeios", href: "/admin/passeios" },
     { icon: DollarSign, label: "Financeiro", href: "/admin/financeiro" },
   ];
+
+  // Filtrar itens baseado no tipo de usuário
+  const filteredNavigationItems = navigationItems.filter(item => {
+    if (item.adminOnly) {
+      return userType === 'admin' || userEmail === 'admin@turguide.com';
+    }
+    return true;
+  });
 
   return (
     <>
@@ -85,7 +95,7 @@ export const AdminMobileNav: React.FC<MobileNavProps> = ({
                 </div>
                 <div>
                   <h1 className="font-bold text-lg text-gray-900">
-                    TourGuide CRM
+                    Essentia CRM
                   </h1>
                   <p className="text-sm text-gray-600">Administrador</p>
                 </div>
@@ -97,7 +107,7 @@ export const AdminMobileNav: React.FC<MobileNavProps> = ({
                   Navegação
                 </h3>
                 <nav className="space-y-2">
-                  {navigationItems.map((item) => (
+                  {filteredNavigationItems.map((item) => (
                     <a
                       key={item.label}
                       href={item.href}
@@ -126,7 +136,15 @@ export const AdminMobileNav: React.FC<MobileNavProps> = ({
                     <p className="text-xs text-gray-600">{userEmail}</p>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" className="w-full" onClick={onLogout}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    setIsOpen(false);
+                    void onLogout();
+                  }}
+                >
                   <LogOut className="h-4 w-4 mr-2" />
                   Sair
                 </Button>

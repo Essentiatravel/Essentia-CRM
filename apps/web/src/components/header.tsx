@@ -39,9 +39,9 @@ export default function Header() {
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b shadow-md">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <div className="flex items-center">
-          <h1 className="text-2xl font-bold text-blue-600">TURGUIDE</h1>
+          <h1 className="text-2xl font-bold text-blue-600">ESSENTIA</h1>
           <span className="ml-2 text-sm text-muted-foreground hidden sm:block">
-            Explore a Itália com quem entende
+          
           </span>
         </div>
 
@@ -89,7 +89,7 @@ export default function Header() {
             {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
 
-          {user && (
+          {user ? (
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 text-sm">
                 <User className="h-4 w-4" />
@@ -100,6 +100,15 @@ export default function Header() {
                 <LogOut className="h-4 w-4" />
                 <span className="hidden sm:block ml-2">Sair</span>
               </Button>
+            </div>
+          ) : (
+            <div className="hidden md:flex items-center gap-2">
+              <Link href="/login">
+                <Button variant="outline" size="sm">Entrar</Button>
+              </Link>
+              <Link href="/register">
+                <Button size="sm">Cadastrar</Button>
+              </Link>
             </div>
           )}
           <ModeToggle />
@@ -212,30 +221,6 @@ export default function Header() {
                 )}
 
                 {/* Informações do usuário logado */}
-                {user && (
-                  <div className="border-t border-gray-200 pt-6">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <User className="h-5 w-5 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{user.nome}</p>
-                        <p className="text-sm text-gray-600 capitalize">{user.userType}</p>
-                      </div>
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      className="w-full" 
-                      onClick={() => {
-                        logout();
-                        setIsMobileMenuOpen(false);
-                      }}
-                    >
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Sair
-                    </Button>
-                  </div>
-                )}
               </div>
             </motion.div>
           </>

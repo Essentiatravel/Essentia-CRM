@@ -16,8 +16,8 @@ async function checkUsers() {
 
     // Buscar usuários com emails duplicados
     const usersByEmail = allUsers.reduce((acc, user) => {
-      if (!acc[user.email]) acc[user.email] = [];
-      acc[user.email].push(user);
+      if (user.email && !acc[user.email]) acc[user.email] = [];
+      if (user.email) acc[user.email].push(user);
       return acc;
     }, {} as Record<string, typeof allUsers>);
 

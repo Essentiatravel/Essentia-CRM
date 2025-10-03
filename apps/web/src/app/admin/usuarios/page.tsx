@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +53,8 @@ interface Usuario {
 }
 
 const UsersManagementPage = () => {
+  const { user } = useAuth();
+  const router = useRouter();
   const [users, setUsers] = useState<Usuario[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -73,6 +77,13 @@ const UsersManagementPage = () => {
     password: ""
   });
 
+  // Verificar se o usuário é admin
+  useEffect(() => {
+    if (user && user.userType !== 'admin' && user.email !== 'admin@turguide.com') {
+      router.push('/admin');
+    }
+  }, [user, router]);
+
   // Carregar usuários
   useEffect(() => {
     fetchUsers();
@@ -80,7 +91,7 @@ const UsersManagementPage = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('/api/users');
+      const response = await fetch(`/api/users?t=${Date.now()}`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         setUsers(data);
@@ -94,7 +105,13 @@ const UsersManagementPage = () => {
 
   const handleCreateUser = async () => {
     try {
-      console.log('Iniciando criação de usuário...', { ...newUser, password: '[HIDDEN]' });
+      console.log('🚀 Iniciando criação de usuário...', { 
+        email: newUser.email,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        userType: newUser.userType,
+        hasPassword: !!newUser.password
+      });
 
       // Validação dos campos obrigatórios
       if (!newUser.email || !newUser.firstName || !newUser.lastName || !newUser.userType || !newUser.password) {
@@ -109,13 +126,14 @@ const UsersManagementPage = () => {
         return;
       }
 
-      console.log('Enviando requisição para criar usuário...');
+      console.log('📤 Enviando requisição para criar usuário...');
 
       const response = await fetch('/api/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           email: newUser.email,
           firstName: newUser.firstName,
@@ -125,19 +143,26 @@ const UsersManagementPage = () => {
         }),
       });
 
-      console.log('Resposta recebida:', response.status, response.statusText);
+      console.log('📥 Resposta recebida:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      });
 
       let result;
       try {
-        result = await response.json();
-        console.log('Resultado:', result);
+        const responseText = await response.text();
+        console.log('📄 Resposta bruta:', responseText);
+        result = JSON.parse(responseText);
+        console.log('📊 Resultado parseado:', result);
       } catch (jsonError) {
-        console.error('Erro ao fazer parse do JSON:', jsonError);
-        alert('Erro na resposta do servidor');
+        console.error('❌ Erro ao fazer parse do JSON:', jsonError);
+        alert(`Erro na resposta do servidor. Status: ${response.status}`);
         return;
       }
 
       if (response.ok) {
+        console.log('✅ Usuário criado com sucesso!');
         alert('Usuário criado com sucesso!');
         await fetchUsers();
         setIsCreateModalOpen(false);
@@ -149,11 +174,12 @@ const UsersManagementPage = () => {
           password: ""
         });
       } else {
-        console.error('Erro na resposta:', result);
-        alert(`Erro ao criar usuário: ${result.error || 'Erro desconhecido'}`);
+        console.error('❌ Erro na resposta:', result);
+        const errorMessage = result.error || result.details || 'Erro desconhecido';
+        alert(`Erro ao criar usuário: ${errorMessage}`);
       }
     } catch (error) {
-      console.error('Erro detalhado ao criar usuário:', error);
+      console.error('💥 Erro detalhado ao criar usuário:', error);
       alert(`Erro ao criar usuário: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     }
   };
@@ -208,6 +234,7 @@ const UsersManagementPage = () => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(updateData),
       });
 
@@ -256,6 +283,7 @@ const UsersManagementPage = () => {
 
       const response = await fetch(`/api/users?id=${user.id}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
 
       console.log('Resposta recebida:', response.status, response.statusText);
@@ -297,16 +325,38 @@ const UsersManagementPage = () => {
   };
 
   const getUserTypeBadge = (type: string) => {
-    const colors = {
-      admin: "bg-red-100 text-red-800",
-      guia: "bg-blue-100 text-blue-800",
-      cliente: "bg-green-100 text-green-800"
+    console.log('🏷️ Gerando badge para tipo:', type, typeof type);
+    
+    const typeConfig = {
+      admin: { 
+        color: "bg-red-100 text-red-800 border-red-200", 
+        label: "Administrador",
+        icon: <Shield className="h-3 w-3" />
+      },
+      guia: { 
+        color: "bg-blue-100 text-blue-800 border-blue-200", 
+        label: "Guia",
+        icon: <UserCheck className="h-3 w-3" />
+      },
+      cliente: { 
+        color: "bg-green-100 text-green-800 border-green-200", 
+        label: "Cliente",
+        icon: <User className="h-3 w-3" />
+      }
     };
 
+    const config = typeConfig[type as keyof typeof typeConfig] || {
+      color: "bg-gray-100 text-gray-800 border-gray-200",
+      label: type || "Indefinido",
+      icon: <User className="h-3 w-3" />
+    };
+
+    console.log('🎨 Config do badge:', config);
+
     return (
-      <Badge className={colors[type as keyof typeof colors] || "bg-gray-100 text-gray-800"}>
-        {getUserTypeIcon(type)}
-        <span className="ml-1 capitalize">{type}</span>
+      <Badge className={`${config.color} border font-medium px-2 py-1 inline-flex items-center gap-1.5`}>
+        {config.icon}
+        <span className="text-xs">{config.label}</span>
       </Badge>
     );
   };
@@ -497,7 +547,7 @@ const UsersManagementPage = () => {
       </div>
 
       {/* Estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -534,6 +584,20 @@ const UsersManagementPage = () => {
                 </p>
               </div>
               <UserCheck className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Clientes</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {users.filter(u => u.userType === 'cliente').length}
+                </p>
+              </div>
+              <User className="h-8 w-8 text-green-600" />
             </div>
           </CardContent>
         </Card>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,26 +20,28 @@ import {
   Edit,
   Trash2,
 } from "lucide-react";
-import { motion } from "framer-motion";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import type { DropResult } from "@hello-pangea/dnd";
-// import NovaTarefaModal from "./nova-tarefa-modal"; // Temporarily commented to fix compilation
+import NovaTarefaModal, { type NovaTarefaData } from "./nova-tarefa-modal";
 import { toast } from "sonner";
+
+type Status = "em_progresso" | "pendente_cliente" | "confirmadas" | "concluidas" | "canceladas";
 
 interface Tarefa {
   id: string;
   passeio_id: string;
-  cliente_id: string;
+  cliente_id: string | null;
   guia_id?: string | null;
   data_passeio: string;
   numero_pessoas: number;
   valor_total: number;
   valor_comissao: number;
-  status: "em_progresso" | "pendente_cliente" | "confirmadas" | "concluidas" | "canceladas" | "pendente" | "concluido";
+  percentual_comissao?: number;
+  status: Status;
   observacoes?: string | null;
-  passeio_nome?: string;
-  cliente_nome?: string;
-  guia_nome?: string;
+  passeio_nome?: string | null;
+  cliente_nome?: string | null;
+  guia_nome?: string | null;
 }
 
 interface Passeio {
@@ -65,16 +67,121 @@ interface Guia {
   especialidades: string[];
 }
 
-// Dados do tRPC serão carregados via hooks
+const ALLOWED_STATUSES: Status[] = [
+  "em_progresso",
+  "pendente_cliente",
+  "confirmadas",
+  "concluidas",
+  "canceladas",
+];
 
-const columns = [
-  { id: "em_progresso", title: "Em Progresso", count: 0 },
-  { id: "pendente", title: "Pendente", count: 0 },
-  { id: "pendente_cliente", title: "Pendente Cliente", count: 0 },
-  { id: "confirmadas", title: "Confirmadas", count: 0 },
-  { id: "concluidas", title: "Concluídas", count: 0 },
-  { id: "concluido", title: "Concluído", count: 0 },
-  { id: "canceladas", title: "Canceladas", count: 0 }
+const toNumber = (value: unknown, fallback = 0): number => {
+  const numeric = Number(value);
+  return Number.isNaN(numeric) ? fallback : numeric;
+};
+
+const toStringOrNull = (value: unknown): string | null => {
+  if (value === null || value === undefined) return null;
+  return String(value);
+};
+
+const toStringArray = (value: unknown): string[] => {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item));
+  }
+
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed.map((item) => String(item)) : value.split(",").map((item) => item.trim());
+    } catch {
+      return value.split(",").map((item) => item.trim());
+    }
+  }
+
+  return [];
+};
+
+const toStatus = (value: unknown): Status => {
+  if (typeof value === "string") {
+    const normalized = value as Status;
+    if (ALLOWED_STATUSES.includes(normalized)) {
+      return normalized;
+    }
+
+    switch (value) {
+      case "pendente":
+        return "pendente_cliente";
+      case "concluido":
+        return "concluidas";
+      default:
+        break;
+    }
+  }
+
+  return "em_progresso";
+};
+
+const normalizePasseio = (passeio: any): Passeio => ({
+  id: String(passeio?.id ?? ""),
+  nome: String(passeio?.nome ?? "Passeio"),
+  descricao: String(passeio?.descricao ?? ""),
+  preco: toNumber(passeio?.preco, 0),
+  duracao: String(passeio?.duracao ?? ""),
+  categoria: String(passeio?.categoria ?? ""),
+});
+
+const normalizeCliente = (cliente: any): Cliente => ({
+  id: String(cliente?.id ?? ""),
+  nome: String(cliente?.nome ?? ""),
+  email: String(cliente?.email ?? ""),
+  telefone: String(cliente?.telefone ?? ""),
+});
+
+const normalizeGuia = (guia: any): Guia => ({
+  id: String(guia?.id ?? ""),
+  nome: String(guia?.nome ?? ""),
+  email: String(guia?.email ?? ""),
+  especialidades: toStringArray(guia?.especialidades),
+});
+
+const normalizeAgendamento = (
+  agendamento: any,
+  collections: { passeios: Passeio[]; clientes: Cliente[]; guias: Guia[] },
+  fallbackIndex = 0,
+): Tarefa => {
+  const passeioId = String(agendamento?.passeio_id ?? agendamento?.passeioId ?? "");
+  const clienteIdRaw = agendamento?.cliente_id ?? agendamento?.clienteId ?? null;
+  const guiaIdRaw = agendamento?.guia_id ?? agendamento?.guiaId ?? null;
+
+  const passeio = collections.passeios.find((p) => p.id === passeioId);
+  const cliente = clienteIdRaw ? collections.clientes.find((c) => c.id === String(clienteIdRaw)) : undefined;
+  const guia = guiaIdRaw ? collections.guias.find((g) => g.id === String(guiaIdRaw)) : undefined;
+
+  return {
+    id: String(agendamento?.id ?? `agendamento-${fallbackIndex}`),
+    passeio_id: passeioId,
+    cliente_id: clienteIdRaw ? String(clienteIdRaw) : null,
+    guia_id: guiaIdRaw ? String(guiaIdRaw) : null,
+    data_passeio: String(agendamento?.data_passeio ?? agendamento?.dataPasseio ?? ""),
+    numero_pessoas: toNumber(agendamento?.numero_pessoas ?? agendamento?.numeroPessoas, 1),
+    valor_total: toNumber(agendamento?.valor_total ?? agendamento?.valorTotal, 0),
+    valor_comissao: toNumber(agendamento?.valor_comissao ?? agendamento?.valorComissao, 0),
+    percentual_comissao: toNumber(agendamento?.percentual_comissao ?? agendamento?.percentualComissao, 30),
+    status: toStatus(agendamento?.status),
+    observacoes: toStringOrNull(agendamento?.observacoes),
+    passeio_nome: passeio?.nome ?? toStringOrNull(agendamento?.passeio_nome),
+    cliente_nome: cliente?.nome ?? toStringOrNull(agendamento?.cliente_nome),
+    guia_nome: guia?.nome ?? toStringOrNull(agendamento?.guia_nome),
+  };
+};
+
+const columns: { id: Status; title: string }[] = [
+  { id: "em_progresso", title: "Em Progresso" },
+  { id: "pendente_cliente", title: "Pendente Cliente" },
+  { id: "confirmadas", title: "Confirmadas" },
+  { id: "concluidas", title: "Concluídas" },
+  { id: "canceladas", title: "Canceladas" },
 ];
 
 const getStatusColor = (status: string) => {
@@ -88,7 +195,7 @@ const getStatusColor = (status: string) => {
   return colors[status as keyof typeof colors] || colors.em_progresso;
 };
 
-const Sidebar: React.FC = () => (
+const Sidebar: React.FC<{ user: any; onLogout: () => Promise<void> }> = ({ user, onLogout }) => (
   <div className="hidden lg:block w-64 bg-white border-r border-gray-200 h-screen fixed left-0 top-0">
     <div className="p-6">
       <div className="flex items-center gap-2 mb-8">
@@ -134,14 +241,16 @@ const Sidebar: React.FC = () => (
       <div className="absolute bottom-6 left-6 right-6">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-            <span className="text-sm font-medium text-gray-700">E</span>
+            <span className="text-sm font-medium text-gray-700">
+              {user?.nome?.charAt(0)?.toUpperCase() || 'A'}
+            </span>
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-900">ELISSON UZUAL</p>
-            <p className="text-xs text-gray-600">uzualelisson@gmail.com</p>
+            <p className="text-sm font-medium text-gray-900">{user?.nome || 'Administrador'}</p>
+            <p className="text-xs text-gray-600">{user?.email || 'admin@turguide.com'}</p>
           </div>
         </div>
-        <Button variant="outline" size="sm" className="w-full">
+        <Button variant="outline" size="sm" className="w-full" onClick={onLogout}>
           <LogOut className="h-4 w-4 mr-2" />
           Sair
         </Button>
@@ -259,6 +368,7 @@ const TaskCard: React.FC<{
 );
 
 const AgendamentosPage: React.FC = () => {
+  const { user, logout } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTarefa, setEditingTarefa] = useState<Tarefa | null>(null);
   const [agendamentos, setAgendamentos] = useState<Tarefa[]>([]);
@@ -269,85 +379,235 @@ const AgendamentosPage: React.FC = () => {
   const [loadingPasseios, setLoadingPasseios] = useState(true);
   const [loadingClientes, setLoadingClientes] = useState(true);
   const [loadingGuias, setLoadingGuias] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Carregar dados das APIs
+  const fetchPasseios = async (): Promise<Passeio[]> => {
+    setLoadingPasseios(true);
+    try {
+      const response = await fetch('/api/passeios');
+      if (!response.ok) {
+        throw new Error('Falha ao carregar passeios');
+      }
+      const payload = await response.json();
+      const mapped: Passeio[] = (Array.isArray(payload) ? payload : []).map(normalizePasseio);
+      setPasseios(mapped);
+      return mapped;
+    } catch (error) {
+      console.error('Erro ao carregar passeios:', error);
+      toast.error('Não foi possível carregar os passeios.');
+      setPasseios([]);
+      return [];
+    } finally {
+      setLoadingPasseios(false);
+    }
+  };
+
+  const fetchClientes = async (): Promise<Cliente[]> => {
+    setLoadingClientes(true);
+    try {
+      const response = await fetch('/api/clientes');
+      if (!response.ok) {
+        throw new Error('Falha ao carregar clientes');
+      }
+      const payload = await response.json();
+      const mapped: Cliente[] = (Array.isArray(payload) ? payload : []).map(normalizeCliente);
+      setClientes(mapped);
+      return mapped;
+    } catch (error) {
+      console.error('Erro ao carregar clientes:', error);
+      toast.error('Não foi possível carregar os clientes.');
+      setClientes([]);
+      return [];
+    } finally {
+      setLoadingClientes(false);
+    }
+  };
+
+  const fetchGuias = async (): Promise<Guia[]> => {
+    setLoadingGuias(true);
+    try {
+      const response = await fetch('/api/guias');
+      if (!response.ok) {
+        throw new Error('Falha ao carregar guias');
+      }
+      const payload = await response.json();
+      const mapped: Guia[] = (Array.isArray(payload) ? payload : []).map(normalizeGuia);
+      setGuias(mapped);
+      return mapped;
+    } catch (error) {
+      console.error('Erro ao carregar guias:', error);
+      toast.error('Não foi possível carregar os guias.');
+      setGuias([]);
+      return [];
+    } finally {
+      setLoadingGuias(false);
+    }
+  };
+
+  const fetchAgendamentos = async (
+    passeiosData: Passeio[] = passeios,
+    clientesData: Cliente[] = clientes,
+    guiasData: Guia[] = guias,
+  ) => {
+    setLoadingAgendamentos(true);
+    try {
+      const response = await fetch('/api/agendamentos', {
+        headers: { 'Cache-Control': 'no-cache' },
+      });
+      if (!response.ok) {
+        throw new Error('Falha ao carregar agendamentos');
+      }
+      const payload = await response.json();
+      const normalized: Tarefa[] = (Array.isArray(payload) ? payload : []).map((item: any, index: number) =>
+        normalizeAgendamento(item, { passeios: passeiosData, clientes: clientesData, guias: guiasData }, index),
+      );
+      setAgendamentos(normalized);
+    } catch (error) {
+      console.error('Erro ao carregar agendamentos:', error);
+      toast.error('Não foi possível carregar os agendamentos.');
+      setAgendamentos([]);
+    } finally {
+      setLoadingAgendamentos(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      // Carregar agendamentos - temporariamente desabilitado (API não existe)
+    const fetchAllData = async () => {
       try {
-        // TODO: Implementar API de agendamentos
-        setAgendamentos([]);
+        const [passeiosData, clientesData, guiasData] = await Promise.all([
+          fetchPasseios(),
+          fetchClientes(),
+          fetchGuias(),
+        ]);
+        await fetchAgendamentos(passeiosData, clientesData, guiasData);
       } catch (error) {
-        console.error('Erro ao carregar agendamentos:', error);
-      } finally {
-        setLoadingAgendamentos(false);
-      }
-
-      // Carregar passeios
-      try {
-        const passeiosResponse = await fetch('/api/passeios');
-        if (passeiosResponse.ok) {
-          const passeiosData = await passeiosResponse.json();
-          setPasseios(passeiosData);
-        }
-      } catch (error) {
-        console.error('Erro ao carregar passeios:', error);
-      } finally {
-        setLoadingPasseios(false);
-      }
-
-      // Carregar clientes - temporariamente desabilitado (API não existe)
-      try {
-        // TODO: Implementar API de clientes
-        setClientes([]);
-      } catch (error) {
-        console.error('Erro ao carregar clientes:', error);
-      } finally {
-        setLoadingClientes(false);
-      }
-
-      // Carregar guias - temporariamente desabilitado (API não existe)
-      try {
-        // TODO: Implementar API de guias
-        setGuias([]);
-      } catch (error) {
-        console.error('Erro ao carregar guias:', error);
-      } finally {
-        setLoadingGuias(false);
+        console.error('Erro ao carregar dados:', error);
       }
     };
-
-    fetchData();
+    
+    fetchAllData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const refetchAgendamentos = async () => {
-    // Temporariamente desabilitado - API não existe
-    console.log('refetchAgendamentos chamado - API não implementada');
-    return;
+    await fetchAgendamentos(passeios, clientes, guias);
   };
 
   const onDragEnd = async (result: DropResult) => {
-    // Temporariamente desabilitado - API não existe
-    toast.info("Funcionalidade de arrastar e soltar será implementada quando a API de agendamentos estiver pronta");
-    return;
+    const { destination, source, draggableId } = result;
+
+    if (!destination || destination.droppableId === source.droppableId) {
+      return;
+    }
+
+    const novoStatus = destination.droppableId as Status;
+
+    try {
+      setAgendamentos(prev =>
+        prev.map(tarefa =>
+          tarefa.id === draggableId ? { ...tarefa, status: novoStatus } : tarefa,
+        ),
+      );
+
+      const response = await fetch(`/api/agendamentos/${draggableId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: novoStatus }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload?.error || 'Falha ao atualizar status');
+      }
+
+      toast.success('Status atualizado com sucesso.');
+      await refetchAgendamentos();
+    } catch (error) {
+      console.error('Erro ao atualizar status do agendamento:', error);
+      toast.error('Não foi possível atualizar o status.');
+      await refetchAgendamentos();
+    }
   };
 
-  const getTarefasByStatus = (status: string) => {
+  const getTarefasByStatus = (status: Status) => {
     return agendamentos.filter(agendamento => agendamento.status === status);
   };
 
-  const handleNovaTarefa = async (data: any) => {
-    // Temporariamente desabilitado - API não existe
-    toast.info("Funcionalidade de criar agendamentos será implementada quando a API estiver pronta");
-    setIsModalOpen(false);
-    setEditingTarefa(null);
+  const buildPayloadFromModal = (data: NovaTarefaData) => ({
+    passeioId: data.passeioId,
+    clienteId: data.clienteId ?? null,
+    guiaId: data.guiaId ?? null,
+    dataPasseio: data.data,
+    numeroPessoas: Number(data.numeroPessoas ?? 1),
+    observacoes: data.observacoes ?? null,
+    percentualComissao: data.comissaoPercentual,
+  });
+
+  const handleNovaTarefa = async (data: NovaTarefaData) => {
+    if (!data?.passeioId || !data?.data) {
+      toast.error('Selecione um passeio e informe a data.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/agendamentos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(buildPayloadFromModal(data)),
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Falha ao criar agendamento.');
+      }
+
+      setAgendamentos(prev => [...prev, payload]);
+      toast.success('Agendamento criado com sucesso.');
+      setIsModalOpen(false);
+      setEditingTarefa(null);
+    } catch (error) {
+      console.error('Erro ao criar agendamento:', error);
+      toast.error(error instanceof Error ? error.message : 'Erro ao criar agendamento.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleEditarTarefa = async (data: any) => {
-    // Temporariamente desabilitado - API não existe
-    toast.info("Funcionalidade de editar agendamentos será implementada quando a API estiver pronta");
-    setIsModalOpen(false);
-    setEditingTarefa(null);
+  const handleEditarTarefa = async (data: NovaTarefaData) => {
+    if (!editingTarefa) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`/api/agendamentos/${editingTarefa.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(buildPayloadFromModal(data)),
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Falha ao atualizar agendamento.');
+      }
+
+      setAgendamentos(prev => prev.map(tarefa => (tarefa.id === payload.id ? payload : tarefa)));
+      toast.success('Agendamento atualizado com sucesso.');
+      setIsModalOpen(false);
+      setEditingTarefa(null);
+    } catch (error) {
+      console.error('Erro ao atualizar agendamento:', error);
+      toast.error(error instanceof Error ? error.message : 'Erro ao atualizar agendamento.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleEditClick = (tarefa: Tarefa) => {
@@ -356,25 +616,60 @@ const AgendamentosPage: React.FC = () => {
   };
 
   const handleCloseModal = () => {
+    if (isSubmitting) {
+      return;
+    }
     setIsModalOpen(false);
     setEditingTarefa(null);
   };
 
   const handleAprovarAgendamento = async (agendamentoId: string) => {
-    // Temporariamente desabilitado - API não existe
-    toast.info("Funcionalidade de aprovar agendamentos será implementada quando a API estiver pronta");
+    try {
+      const response = await fetch(`/api/agendamentos/${agendamentoId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'confirmadas' as Status }),
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Falha ao aprovar agendamento.');
+      }
+
+      setAgendamentos(prev => prev.map(tarefa => (tarefa.id === payload.id ? payload : tarefa)));
+      toast.success('Agendamento confirmado.');
+    } catch (error) {
+      console.error('Erro ao aprovar agendamento:', error);
+      toast.error('Não foi possível aprovar o agendamento.');
+    }
   };
 
   const handleRemoverAgendamento = async (agendamentoId: string) => {
-    // Temporariamente desabilitado - API não existe
-    toast.info("Funcionalidade de remover agendamentos será implementada quando a API estiver pronta");
+    try {
+      const response = await fetch(`/api/agendamentos/${agendamentoId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload?.error || 'Falha ao remover agendamento.');
+      }
+
+      setAgendamentos(prev => prev.filter(tarefa => tarefa.id !== agendamentoId));
+      toast.success('Agendamento removido com sucesso.');
+    } catch (error) {
+      console.error('Erro ao remover agendamento:', error);
+      toast.error('Não foi possível remover o agendamento.');
+    }
   };
 
   if (loadingAgendamentos || loadingPasseios || loadingClientes || loadingGuias) {
     return (
-      <div className="flex h-screen bg-gray-50">
-        <Sidebar />
-        <div className="flex-1 lg:ml-64 ml-0 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 lg:pl-10">
+        <Sidebar user={user} onLogout={logout} />
+        <div className="flex items-center justify-center px-4 py-10 lg:py-16">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
             <p className="text-gray-600 mt-2">Carregando agendamentos...</p>
@@ -385,11 +680,11 @@ const AgendamentosPage: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      
-      <div className="flex-1 lg:ml-64 ml-0">
-        <div className="p-4 lg:p-8">
+    <>
+      <div className="min-h-screen bg-gray-50 lg:pl-10">
+        <Sidebar user={user} onLogout={logout} />
+
+        <div className="pl-2 pr-3 sm:pl-4 sm:pr-4 lg:pl-3 lg:pr-8 xl:pl-4 xl:pr-10 py-4 lg:py-10">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
             <div>
               <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
@@ -410,7 +705,7 @@ const AgendamentosPage: React.FC = () => {
               Nova Tarefa
             </Button>
           </div>
-
+          
           <DragDropContext onDragEnd={onDragEnd}>
             <div className="flex gap-6 overflow-x-auto pb-4">
               {columns.map((column) => (
@@ -452,16 +747,17 @@ const AgendamentosPage: React.FC = () => {
         </div>
       </div>
 
-                {/* <NovaTarefaModal
-            isOpen={isModalOpen}
-            onClose={handleCloseModal}
-            onSubmit={editingTarefa ? handleEditarTarefa : handleNovaTarefa}
-            passeios={passeios}
-            clientes={clientes}
-            guias={guias}
-            editingTarefa={editingTarefa}
-          /> */}
-    </div>
+      <NovaTarefaModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onSubmit={editingTarefa ? handleEditarTarefa : handleNovaTarefa}
+        passeios={passeios}
+        clientes={clientes}
+        guias={guias}
+        editingTarefa={editingTarefa}
+        isSubmitting={isSubmitting}
+      />
+    </>
   );
 };
 

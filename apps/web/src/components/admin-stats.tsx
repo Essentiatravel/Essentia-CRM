@@ -67,9 +67,14 @@ const StatCard: React.FC<StatCardProps> = ({
 
 export const AdminStats: React.FC = () => {
   const [isOnline, setIsOnline] = useState(true);
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    // Apenas executar no cliente para evitar problemas de hidratação
+    setIsClient(true);
+    setCurrentTime(new Date());
+    
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
@@ -127,7 +132,7 @@ export const AdminStats: React.FC = () => {
           </span>
         </div>
         <div className="text-sm text-gray-600">
-          {currentTime.toLocaleTimeString("pt-BR")}
+          {isClient && currentTime ? currentTime.toLocaleTimeString("pt-BR") : "--:--:--"}
         </div>
       </div>
 

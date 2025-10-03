@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { formatCurrency } from "@/lib/format-utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -238,20 +240,20 @@ const FinancialMetricCard: React.FC<{ metric: FinancialMetric; index: number }> 
     transition={{ duration: 0.5, delay: index * 0.1 }}
   >
     <Card className={`${metric.bgColor} border-0 h-full`}>
-      <CardContent className="p-6">
+      <CardContent className="p-4">
         <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <h3 className="text-sm font-medium text-gray-600 mb-2">{metric.title}</h3>
-            <p className="text-2xl font-bold text-gray-900 mb-1">{metric.value}</p>
-            <div className="flex items-center gap-2">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-xs font-medium text-gray-600 mb-1 truncate">{metric.title}</h3>
+            <p className="text-xl font-bold text-gray-900 mb-0.5">{metric.value}</p>
+            <div className="flex items-center gap-2 flex-wrap">
               {metric.growth && (
                 <div className="flex items-center gap-1">
-                  <TrendingUp className="h-3 w-3 text-green-600" />
-                  <span className="text-sm text-green-600 font-medium">{metric.growth}</span>
+                  <TrendingUp className="h-3 w-3 text-green-600 flex-shrink-0" />
+                  <span className="text-xs text-green-600 font-medium">{metric.growth}</span>
                 </div>
               )}
               {metric.subtitle && (
-                <span className={`text-sm font-medium ${
+                <span className={`text-xs font-medium ${
                   metric.subtitle.includes("agendamentos") 
                     ? "text-orange-600" 
                     : "text-purple-600"
@@ -261,7 +263,7 @@ const FinancialMetricCard: React.FC<{ metric: FinancialMetric; index: number }> 
               )}
             </div>
           </div>
-          <div className={`p-3 rounded-lg ${metric.iconColor}`}>
+          <div className={`p-2.5 rounded-lg ${metric.iconColor} flex-shrink-0 ml-3`}>
             <div className="text-white">{metric.icon}</div>
           </div>
         </div>
@@ -270,7 +272,7 @@ const FinancialMetricCard: React.FC<{ metric: FinancialMetric; index: number }> 
   </motion.div>
 );
 
-const Sidebar: React.FC = () => (
+const Sidebar: React.FC<{ user: any; onLogout: () => Promise<void> }> = ({ user, onLogout }) => (
   <div className="hidden lg:block w-64 bg-white border-r border-gray-200 h-screen fixed left-0 top-0">
     <div className="p-6">
       <div className="flex items-center gap-2 mb-8">
@@ -316,14 +318,16 @@ const Sidebar: React.FC = () => (
       <div className="absolute bottom-6 left-6 right-6">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-            <span className="text-sm font-medium text-gray-700">E</span>
+            <span className="text-sm font-medium text-gray-700">
+              {user?.nome?.charAt(0)?.toUpperCase() || 'A'}
+            </span>
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-900">ELISSON UZUAL</p>
-            <p className="text-xs text-gray-600">uzualelisson@gmail.com</p>
+            <p className="text-sm font-medium text-gray-900">{user?.nome || 'Administrador'}</p>
+            <p className="text-xs text-gray-600">{user?.email || 'admin@turguide.com'}</p>
           </div>
         </div>
-        <Button variant="outline" size="sm" className="w-full">
+        <Button variant="outline" size="sm" className="w-full" onClick={onLogout}>
           <LogOut className="h-4 w-4 mr-2" />
           Sair
         </Button>
@@ -333,6 +337,7 @@ const Sidebar: React.FC = () => (
 );
 
 const FinanceiroPage: React.FC = () => {
+  const { user, logout } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("Todos os Status");
   const [monthFilter, setMonthFilter] = useState("Todos os Meses");
@@ -350,35 +355,35 @@ const FinanceiroPage: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar />
+      <Sidebar user={user} onLogout={logout} />
       
-      <div className="flex-1 lg:ml-64 ml-0">
-        <div className="p-4 lg:p-8">
+      <div className="flex-1 lg:ml-05 ml-0">
+        <div className="p-3 lg:p-5">
           {/* Cabeçalho da página */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
             <div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
+              <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
                 Gestão Financeira
               </h1>
-              <p className="text-gray-600 mt-1">
+              <p className="text-sm text-gray-600 mt-1">
                 Controle completo de receitas, comissões e pagamentos.
               </p>
             </div>
-            <Button className="bg-green-600 hover:bg-green-700 text-white">
+            <Button className="bg-green-600 hover:bg-green-700 text-white text-sm" size="sm">
               <Download className="h-4 w-4 mr-2" />
               Exportar Relatório
             </Button>
           </div>
 
           {/* Cards de métricas financeiras */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
             {financialMetrics.map((metric, index) => (
               <FinancialMetricCard key={index} metric={metric} index={index} />
             ))}
           </div>
 
           {/* Filtros e busca */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-3">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
@@ -412,22 +417,22 @@ const FinanceiroPage: React.FC = () => {
             transition={{ duration: 0.5 }}
           >
             <Card>
-              <CardHeader>
-                <CardTitle>Transações Financeiras</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Transações Financeiras</CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-6 font-medium text-gray-500">Data</th>
-                        <th className="text-left py-3 px-6 font-medium text-gray-500">Cliente</th>
-                        <th className="text-left py-3 px-6 font-medium text-gray-500">Passeio</th>
-                        <th className="text-left py-3 px-6 font-medium text-gray-500">Guia</th>
-                        <th className="text-left py-3 px-6 font-medium text-gray-500">Valor Total</th>
-                        <th className="text-left py-3 px-6 font-medium text-gray-500">Comissão</th>
-                        <th className="text-left py-3 px-6 font-medium text-gray-500">Status</th>
-                        <th className="text-left py-3 px-6 font-medium text-gray-500">Pagamento</th>
+                      <tr className="border-b border-gray-200 bg-gray-50">
+                        <th className="text-left py-2 px-4 font-medium text-xs text-gray-600">Data</th>
+                        <th className="text-left py-2 px-4 font-medium text-xs text-gray-600">Cliente</th>
+                        <th className="text-left py-2 px-4 font-medium text-xs text-gray-600">Passeio</th>
+                        <th className="text-left py-2 px-4 font-medium text-xs text-gray-600">Guia</th>
+                        <th className="text-left py-2 px-4 font-medium text-xs text-gray-600">Valor Total</th>
+                        <th className="text-left py-2 px-4 font-medium text-xs text-gray-600">Comissão</th>
+                        <th className="text-left py-2 px-4 font-medium text-xs text-gray-600">Status</th>
+                        <th className="text-left py-2 px-4 font-medium text-xs text-gray-600">Pagamento</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -439,26 +444,26 @@ const FinanceiroPage: React.FC = () => {
                           transition={{ duration: 0.3, delay: index * 0.05 }}
                           className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                         >
-                          <td className="py-4 px-6 text-gray-900">{transaction.data}</td>
-                          <td className="py-4 px-6 text-gray-900">{transaction.cliente}</td>
-                          <td className="py-4 px-6 text-gray-900">{transaction.passeio}</td>
-                          <td className="py-4 px-6 text-gray-600">{transaction.guia}</td>
-                          <td className="py-4 px-6">
-                            <span className="font-medium text-green-600">
-                              R$ {transaction.valorTotal.toFixed(2)}
+                          <td className="py-2.5 px-4 text-gray-900">{transaction.data}</td>
+                          <td className="py-2.5 px-4 text-gray-900">{transaction.cliente}</td>
+                          <td className="py-2.5 px-4 text-gray-900">{transaction.passeio}</td>
+                          <td className="py-2.5 px-4 text-gray-600">{transaction.guia}</td>
+                          <td className="py-2.5 px-4">
+                            <span className="font-medium text-green-600 text-sm">
+                              {formatCurrency(transaction.valorTotal)}
                             </span>
                           </td>
-                          <td className="py-4 px-6">
-                            <span className={`font-medium ${
+                          <td className="py-2.5 px-4">
+                            <span className={`font-medium text-sm ${
                               transaction.comissao === 0 ? 'text-red-600' : 'text-purple-600'
                             }`}>
-                              R$ {transaction.comissao.toFixed(2)}
+                              {formatCurrency(transaction.comissao)}
                             </span>
                           </td>
-                          <td className="py-4 px-6">
+                          <td className="py-2.5 px-4">
                             {getStatusBadge(transaction.status)}
                           </td>
-                          <td className="py-4 px-6">
+                          <td className="py-2.5 px-4">
                             {getPagamentoBadge(transaction.pagamento)}
                           </td>
                         </motion.tr>

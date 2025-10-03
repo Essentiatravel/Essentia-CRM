@@ -9,7 +9,7 @@ const passeiosData = [
     preco: 120.00,
     duracao: "4h",
     categoria: "História",
-    imagens: JSON.stringify(["/images/roma1.jpg", "/images/roma2.jpg"]),
+    imagens: JSON.stringify([]), // Sem imagens, usará emoji de fallback
     inclusoes: JSON.stringify(["Guia especializado", "Entrada nos monumentos", "Transporte"]),
     idiomas: JSON.stringify(["Português", "Italiano", "Inglês"]),
     capacidadeMaxima: 15,
@@ -21,7 +21,7 @@ const passeiosData = [
     preco: 200.00,
     duracao: "6h",
     categoria: "Aventura",
-    imagens: JSON.stringify(["/images/trilha1.jpg", "/images/trilha2.jpg"]),
+    imagens: JSON.stringify([]), // Sem imagens, usará emoji de fallback
     inclusoes: JSON.stringify(["Equipamentos de segurança", "Lanche", "Guia especializado"]),
     idiomas: JSON.stringify(["Português", "Italiano", "Espanhol"]),
     capacidadeMaxima: 8,
@@ -33,7 +33,7 @@ const passeiosData = [
     preco: 150.00,
     duracao: "5h",
     categoria: "Arte",
-    imagens: JSON.stringify(["/images/florenca1.jpg", "/images/florenca2.jpg"]),
+    imagens: JSON.stringify([]), // Sem imagens, usará emoji de fallback
     inclusoes: JSON.stringify(["Entrada nos museus", "Guia especialista em arte", "Audioguia"]),
     idiomas: JSON.stringify(["Português", "Italiano", "Francês"]),
     capacidadeMaxima: 12,
@@ -45,7 +45,7 @@ const passeiosData = [
     preco: 180.00,
     duracao: "3h",
     categoria: "Romance",
-    imagens: JSON.stringify(["/images/veneza1.jpg", "/images/veneza2.jpg"]),
+    imagens: JSON.stringify([]), // Sem imagens, usará emoji de fallback
     inclusoes: JSON.stringify(["Passeio de gôndola", "Jantar romântico", "Guia local"]),
     idiomas: JSON.stringify(["Português", "Italiano", "Inglês"]),
     capacidadeMaxima: 6,
@@ -57,7 +57,7 @@ const passeiosData = [
     preco: 250.00,
     duracao: "8h",
     categoria: "Gastronomia",
-    imagens: JSON.stringify(["/images/toscana1.jpg", "/images/toscana2.jpg"]),
+    imagens: JSON.stringify([]), // Sem imagens, usará emoji de fallback
     inclusoes: JSON.stringify(["Aula de culinária", "Degustação de vinhos", "Almoço completo", "Receitas"]),
     idiomas: JSON.stringify(["Português", "Italiano"]),
     capacidadeMaxima: 10,

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -12,60 +12,47 @@ interface ProtectedRouteProps {
 
 export default function ProtectedRoute({
   children,
-  allowedTypes = ['admin'],
-  redirectTo = '/'
+  allowedTypes = ["admin"],
+  redirectTo = "/",
 }: ProtectedRouteProps) {
-  const { user, loading, login } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        // Se não está logado, inicia o processo de login
-        login();
-        return;
-      }
+    if (loading) return;
 
-      // Verificar se o tipo de usuário está permitido
-      if (user.userType && !allowedTypes.includes(user.userType)) {
-        // Redirecionar para o dashboard apropriado
-        if (user.userType === 'admin') {
-          router.push('/admin');
-        } else if (user.userType === 'guia') {
-          router.push('/guia');
-        } else if (user.userType === 'cliente') {
-          router.push('/cliente');
-        } else {
-          router.push(redirectTo);
-        }
-        return;
+    if (!user) {
+      router.push(`/login?redirect=${encodeURIComponent(pathname ?? redirectTo)}`);
+      return;
+    }
+
+    if (user.userType && !allowedTypes.includes(user.userType)) {
+      if (user.userType === "admin") {
+        router.push("/admin");
+      } else if (user.userType === "guia") {
+        router.push("/guia");
+      } else if (user.userType === "cliente") {
+        router.push("/cliente");
+      } else {
+        router.push(redirectTo);
       }
     }
-  }, [user, loading, login, allowedTypes, redirectTo, router]);
+  }, [user, loading, allowedTypes, redirectTo, router, pathname]);
 
-  if (loading) {
+  if (loading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Verificando acesso...</p>
+          <p className="mt-4 text-gray-600">
+            {loading ? "Verificando acesso..." : "Redirecionando para login..."}
+          </p>
         </div>
       </div>
     );
   }
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Redirecionando para login...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Se o usuário não tem o tipo permitido, não renderiza
   if (user.userType && !allowedTypes.includes(user.userType)) {
     return (
       <div className="min-h-screen flex items-center justify-center">

@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useIsClient, formatCurrency } from "@/lib/format-utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -36,7 +38,7 @@ interface Agendamento {
   status: string;
 }
 
-const Sidebar: React.FC = () => (
+const Sidebar: React.FC<{ user: any; onLogout: () => Promise<void> }> = ({ user, onLogout }) => (
   <div className="hidden lg:block w-64 bg-white border-r border-gray-200 h-screen fixed left-0 top-0">
     <div className="p-6">
       <div className="flex items-center gap-2 mb-8">
@@ -82,14 +84,16 @@ const Sidebar: React.FC = () => (
       <div className="absolute bottom-6 left-6 right-6">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-            <span className="text-sm font-medium text-gray-700">E</span>
+            <span className="text-sm font-medium text-gray-700">
+              {user?.nome?.charAt(0)?.toUpperCase() || 'A'}
+            </span>
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-900">ELISSON UZUAL</p>
-            <p className="text-xs text-gray-600">uzualelisson@gmail.com</p>
+            <p className="text-sm font-medium text-gray-900">{user?.nome || 'Administrador'}</p>
+            <p className="text-xs text-gray-600">{user?.email || 'admin@turguide.com'}</p>
           </div>
         </div>
-        <Button variant="outline" size="sm" className="w-full">
+        <Button variant="outline" size="sm" className="w-full" onClick={onLogout}>
           <LogOut className="h-4 w-4 mr-2" />
           Sair
         </Button>
@@ -99,6 +103,8 @@ const Sidebar: React.FC = () => (
 );
 
 const CalendarioGlobal: React.FC = () => {
+  const { user, logout } = useAuth();
+  const isClient = useIsClient();
   const [currentDate, setCurrentDate] = useState(new Date(2025, 1, 1)); // Fevereiro 2025
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [loading, setLoading] = useState(true);
@@ -107,7 +113,16 @@ const CalendarioGlobal: React.FC = () => {
   useEffect(() => {
     const fetchAgendamentos = async () => {
       try {
-        const response = await fetch('/api/agendamentos');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+        
+        const response = await fetch('/api/agendamentos', {
+          signal: controller.signal,
+          headers: { 'Cache-Control': 'no-cache' }
+        });
+        
+        clearTimeout(timeoutId);
+        
         if (response.ok) {
           const data = await response.json();
           
@@ -116,9 +131,17 @@ const CalendarioGlobal: React.FC = () => {
             agendamento.status === 'confirmadas'
           );
           setAgendamentos(confirmados);
+        } else {
+          console.error('Erro na resposta da API:', response.status);
+          setAgendamentos([]);
         }
       } catch (error) {
-        console.error('Erro ao carregar agendamentos:', error);
+        if (error.name === 'AbortError') {
+          console.error('Timeout ao carregar agendamentos do calendário');
+        } else {
+          console.error('Erro ao carregar agendamentos:', error);
+        }
+        setAgendamentos([]);
       } finally {
         setLoading(false);
       }
@@ -195,7 +218,7 @@ const CalendarioGlobal: React.FC = () => {
   if (loading) {
     return (
       <div className="flex h-screen bg-gray-50">
-        <Sidebar />
+        <Sidebar user={user} onLogout={logout} />
         <div className="flex-1 lg:ml-64 ml-0 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -208,7 +231,7 @@ const CalendarioGlobal: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar />
+      <Sidebar user={user} onLogout={logout} />
       
       <div className="flex-1 lg:ml-64 ml-0">
         <div className="p-4 lg:p-8">
@@ -331,7 +354,7 @@ const CalendarioGlobal: React.FC = () => {
               <div className="grid grid-cols-7 gap-1">
                 {days.map((day, index) => {
                   const events = day ? getEventsForDay(day) : [];
-                  const isToday = day ? day.toDateString() === new Date().toDateString() : false;
+                  const isToday = isClient && day ? day.toDateString() === new Date().toDateString() : false;
                   const isCurrentMonth = day ? day.getMonth() === currentDate.getMonth() : false;
 
                   return (
@@ -430,7 +453,7 @@ const CalendarioGlobal: React.FC = () => {
                       
                       <div className="text-right">
                         <div className="font-medium text-green-600">
-                          R$ {agendamento.valor_total.toFixed(2)}
+                          {formatCurrency(agendamento.valor_total)}
                         </div>
                         <Badge variant="secondary" className="text-xs">
                           Confirmado

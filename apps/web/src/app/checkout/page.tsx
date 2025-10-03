@@ -23,6 +23,7 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 
 interface BookingData {
   passeioId: string;
@@ -38,6 +39,20 @@ interface BookingData {
     email: string;
     telefone: string;
     observacoes: string;
+  };
+  preCadastro?: {
+    success: boolean;
+    clienteId: string;
+    novoCliente: boolean;
+    senhaGerada: string | null;
+    cliente: {
+      id: string;
+      nome: string;
+      email: string;
+      telefone: string | null;
+      status: string;
+      atualizadoEm: string;
+    } | null;
   };
 }
 
@@ -70,16 +85,18 @@ export default function Checkout() {
     if (!bookingData) return;
 
     setProcessing(true);
-    
+
     try {
       // Simular processamento do pagamento
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       // Calcular valor final considerando PIX
       const valorFinalComPix = paymentMethod === "pix" ? bookingData.valorTotal * 0.95 : bookingData.valorTotal;
-      
-      // Criar reserva no backend
-      const response = await fetch('/api/reservas', {
+
+      // Usar API de teste para PIX, API normal para outros métodos
+      const apiEndpoint = paymentMethod === 'pix' ? '/api/teste-pix' : '/api/reservas';
+
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -95,14 +112,15 @@ export default function Checkout() {
           clienteEmail: bookingData.cliente.email,
           clienteTelefone: bookingData.cliente.telefone,
           clienteObservacoes: bookingData.cliente.observacoes,
-          metodoPagamento: paymentMethod
+          metodoPagamento: paymentMethod,
+          // Enviar dados do precheck para evitar duplicação
+          preCadastroClienteId: bookingData.preCadastro?.clienteId,
         }),
       });
 
       if (response.ok) {
         const result = await response.json();
-        
-        // Salvar apenas informações básicas da reserva (sem dados sensíveis)
+
         const reservaSegura = {
           id: result.reservaId,
           passeioNome: bookingData.passeioNome,
@@ -121,12 +139,64 @@ export default function Checkout() {
           },
           status: 'confirmada'
         };
-        
+
         localStorage.setItem('ultimaReserva', JSON.stringify(reservaSegura));
         localStorage.removeItem('bookingData');
-        
-        // Redirecionar para página de confirmação
-        router.push('/confirmacao');
+
+        // Priorizar dados do preCadastro que foram criados na primeira etapa
+        const clienteId = bookingData.preCadastro?.clienteId ?? result.clienteId;
+        const clienteDados = bookingData.preCadastro?.cliente ?? result.cliente ?? {
+          id: clienteId,
+          nome: bookingData.cliente.nome,
+          email: bookingData.cliente.email,
+          telefone: bookingData.cliente.telefone,
+          status: 'ativo',
+          criadoEm: new Date().toISOString(),
+        };
+
+        const clienteLogado = {
+          id: clienteId,
+          nome: clienteDados.nome ?? bookingData.cliente.nome,
+          email: clienteDados.email ?? bookingData.cliente.email,
+          telefone: clienteDados.telefone ?? bookingData.cliente.telefone,
+          status: clienteDados.status ?? 'ativo',
+          criadoEm: clienteDados.criadoEm ?? clienteDados.atualizadoEm ?? new Date().toISOString(),
+          endereco: clienteDados.endereco ?? null,
+        };
+
+        localStorage.setItem('clienteLogado', JSON.stringify(clienteLogado));
+
+        // Usar senha do preCadastro (primeira vez que o usuário foi criado)
+        const senhaParaLogin = bookingData.preCadastro?.senhaGerada ?? null;
+        const ehNovoCliente = bookingData.preCadastro?.novoCliente ?? false;
+
+        console.log('🔐 Tentando login automático:', {
+          ehNovoCliente,
+          temSenha: !!senhaParaLogin,
+          clienteId
+        });
+
+        if (ehNovoCliente && senhaParaLogin) {
+          localStorage.setItem('senhaTemporaria', senhaParaLogin);
+          try {
+            const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+              email: bookingData.cliente.email,
+              password: senhaParaLogin,
+            });
+
+            if (authError) {
+              console.error('❌ Erro ao autenticar no Supabase:', authError.message);
+            } else {
+              console.log('✅ Login automático realizado com sucesso!', authData.user?.id);
+            }
+          } catch (authError) {
+            console.warn('❌ Não foi possível autenticar automaticamente no Supabase:', authError);
+          }
+        } else {
+          console.log('ℹ️ Login automático não necessário (cliente já existente)');
+        }
+
+        router.push('/cliente/dashboard');
       } else {
         throw new Error('Erro ao processar reserva');
       }

@@ -28,11 +28,12 @@ interface PasseiosCardsProps {
 // Emojis para categorias de passeios (fallback quando não há imagens)
 const emojisPorCategoria: { [key: string]: string } = {
   "História": "🏛️",
-  "Histórico": "🏛️", 
+  "Histórico": "🏛️",
   "Religioso": "⛪",
   "Natureza": "🌲",
   "Gastronomia": "🍽️",
   "Romântico": "💕",
+  "Romance": "💕",
   "Cultural": "🎨",
   "Aventura": "🧗",
   "Arte": "🎨"
@@ -168,20 +169,20 @@ export default function PasseiosCards({ destaque = false, limite }: PasseiosCard
                 {(() => {
                   // Parse imagens do passeio - parsing robusto
                   let imagensArray: string[] = [];
-                  
+
                   if (passeio.imagens) {
                     try {
                       // Se já é array, usa diretamente
                       if (Array.isArray(passeio.imagens)) {
                         imagensArray = passeio.imagens;
-                      } 
+                      }
                       // Se é string, tenta fazer parse
                       else if (typeof passeio.imagens === 'string') {
-                        imagensArray = JSON.parse(passeio.imagens);
+                        const parsed = JSON.parse(passeio.imagens);
+                        imagensArray = Array.isArray(parsed) ? parsed : [];
                       }
                     } catch (error) {
-                      console.warn('Erro ao fazer parse das imagens:', passeio.imagens, error);
-                      // Fallback: se é string simples, coloca em array
+                      // Fallback: se é string simples que parece caminho, coloca em array
                       if (typeof passeio.imagens === 'string' && passeio.imagens.startsWith('/')) {
                         imagensArray = [passeio.imagens];
                       }
@@ -189,8 +190,10 @@ export default function PasseiosCards({ destaque = false, limite }: PasseiosCard
                   }
 
                   const primeiraImagem = imagensArray && imagensArray.length > 0 ? imagensArray[0] : null;
+                  const emoji = emojisPorCategoria[passeio.categoria] || "🏛️";
 
-                  if (primeiraImagem) {
+                  // Se houver imagem do Supabase, exibir
+                  if (primeiraImagem && (primeiraImagem.includes('supabase.co') || primeiraImagem.startsWith('http'))) {
                     return (
                       <div className="w-full h-full relative overflow-hidden">
                         <Image
@@ -200,23 +203,30 @@ export default function PasseiosCards({ destaque = false, limite }: PasseiosCard
                           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                           className="object-cover transition-transform duration-300 hover:scale-110"
                           onError={(e) => {
-                            console.error('Erro ao carregar imagem:', primeiraImagem);
-                            // Fallback para o emoji se a imagem não carregar
-                            e.currentTarget.style.display = 'none';
+                            // Fallback para emoji se a imagem falhar
+                            const target = e.currentTarget;
+                            const parent = target.parentElement;
+                            if (parent) {
+                              parent.innerHTML = `
+                                <div class="w-full h-full bg-gradient-to-br from-blue-600 via-purple-600 to-orange-500 flex items-center justify-center relative overflow-hidden">
+                                  <div class="absolute inset-0 bg-gradient-to-br from-transparent via-white/10 to-transparent"></div>
+                                  <span class="text-6xl drop-shadow-2xl relative z-10">${emoji}</span>
+                                </div>
+                              `;
+                            }
                           }}
                         />
                       </div>
                     );
-                  } else {
-                    // Fallback para emoji se não houver imagem
-                    const emoji = emojisPorCategoria[passeio.categoria] || "🏛️";
-                    return (
-                      <div className="w-full h-full bg-gradient-to-br from-blue-600 via-purple-600 to-orange-500 flex items-center justify-center relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/10 to-transparent"></div>
-                        <span className="text-6xl drop-shadow-2xl relative z-10">{emoji}</span>
-                      </div>
-                    );
                   }
+
+                  // Fallback para emoji se não houver imagem
+                  return (
+                    <div className="w-full h-full bg-gradient-to-br from-blue-600 via-purple-600 to-orange-500 flex items-center justify-center relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/10 to-transparent"></div>
+                      <span className="text-6xl drop-shadow-2xl relative z-10">{emoji}</span>
+                    </div>
+                  );
                 })()}
               </div>
 
@@ -271,7 +281,7 @@ export default function PasseiosCards({ destaque = false, limite }: PasseiosCard
                       className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 font-semibold"
                       size="sm"
                     >
-                      Ver Detalhes 🚀
+                      Ver Detalhes 
                     </Button>
                   </Link>
                 </div>

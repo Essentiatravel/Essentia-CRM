@@ -27,15 +27,30 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    console.log('🔍 Buscando passeio no banco:', id);
+    
     const passeio = await db.select().from(passeios).where(eq(passeios.id, id)).limit(1);
     
     if (passeio.length === 0) {
+      console.log('❌ Passeio não encontrado:', id);
       return NextResponse.json({ error: 'Passeio não encontrado' }, { status: 404 });
     }
 
-    return NextResponse.json(passeio[0]);
+    // Garantir que campos JSON sejam arrays
+    const passeioFormatado = {
+      ...passeio[0],
+      imagens: Array.isArray(passeio[0].imagens) ? passeio[0].imagens : 
+               (typeof passeio[0].imagens === 'string' ? JSON.parse(passeio[0].imagens) : []),
+      inclusoes: Array.isArray(passeio[0].inclusoes) ? passeio[0].inclusoes :
+                 (typeof passeio[0].inclusoes === 'string' ? JSON.parse(passeio[0].inclusoes) : []),
+      idiomas: Array.isArray(passeio[0].idiomas) ? passeio[0].idiomas :
+               (typeof passeio[0].idiomas === 'string' ? JSON.parse(passeio[0].idiomas) : []),
+    };
+
+    console.log('✅ Passeio encontrado e formatado:', passeioFormatado);
+    return NextResponse.json(passeioFormatado);
   } catch (error) {
-    console.error('Erro ao buscar passeio:', error);
+    console.error('❌ Erro ao buscar passeio:', error);
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 }
@@ -57,9 +72,10 @@ export async function PUT(
       preco: parseFloat(passeioData.price || passeioData.preco) || 0,
       duracao: `${passeioData.duration || passeioData.duracao}h`,
       categoria: passeioData.type || passeioData.categoria,
-      imagens: JSON.stringify(passeioData.images || []),
-      inclusoes: JSON.stringify(passeioData.includedItems || []),
-      idiomas: JSON.stringify(passeioData.languages || []),
+      // Armazenar como arrays nativos (Drizzle converte para JSONB)
+      imagens: passeioData.images || [],
+      inclusoes: passeioData.includedItems || [],
+      idiomas: passeioData.languages || [],
       capacidadeMaxima: parseInt(passeioData.maxPeople) || 20,
       ativo: passeioData.status === 'Ativo' ? 1 : 0,
       atualizadoEm: new Date()
