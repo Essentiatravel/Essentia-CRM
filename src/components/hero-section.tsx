@@ -12,9 +12,20 @@ export default function HeroSection() {
 
   return (
     <section className="min-h-screen flex items-center justify-center relative overflow-hidden">
-      {/* Background Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-blue-500 to-orange-400" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+      {/* Background Gradient - Safari Compatible */}
+      <div 
+        className="absolute inset-0 bg-gradient-to-br from-blue-600 via-blue-500 to-orange-400"
+        style={{
+          background: 'linear-gradient(to bottom right, rgb(37, 99, 235), rgb(59, 130, 246), rgb(251, 146, 60))',
+          WebkitBackgroundClip: 'padding-box',
+        }}
+      />
+      <div 
+        className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"
+        style={{
+          background: 'linear-gradient(to top, rgba(0, 0, 0, 0.2), transparent)',
+        }}
+      />
 
       {/* Admin Access Button - Top Right */}
       <div className="absolute top-4 right-4 z-20">
