@@ -1,29 +1,38 @@
-# 🔐 Como Criar Usuário Admin
+# 🔐 Como Criar Usuário Admin (MÉTODO SEGURO)
 
-Existem **3 formas** de criar um usuário administrador:
+⚠️ **IMPORTANTE:** Não usamos API pública para criar admins por segurança!
+
+Existem **2 formas SEGURAS** de criar um usuário administrador:
 
 ---
 
 ## 🚀 Forma 1: Script Automático (Recomendado)
 
-O jeito mais fácil! Use o script que criamos:
+O script usa diretamente a **Admin API do Supabase** (não expõe rota pública).
 
 ```bash
 ./criar-admin.sh
 ```
 
-O script vai pedir:
-- 📧 Email do admin
-- 🔒 Senha (mínimo 6 caracteres)
-- 👤 Nome completo
+**O que o script faz:**
+- ✅ Carrega credenciais do `.env.local` automaticamente
+- ✅ Cria usuário no Supabase Auth usando Service Role Key
+- ✅ Insere perfil admin na tabela `users`
+- ✅ Auto-confirma email (não precisa clicar no link)
+- ✅ Totalmente seguro (sem API pública)
 
-**Exemplo:**
+**Exemplo de uso:**
 ```bash
 $ ./criar-admin.sh
 
 ==================================================
-🔐 CRIAR USUÁRIO ADMINISTRADOR
+🔐 CRIAR USUÁRIO ADMINISTRADOR (VIA SUPABASE)
 ==================================================
+
+⚠️  Este script cria o admin DIRETAMENTE no Supabase
+    Você precisa das credenciais do Supabase
+
+✅ Variáveis de ambiente carregadas
 
 📧 Email do admin: admin@turguide.com
 🔒 Senha (min 6 caracteres): ******
@@ -35,62 +44,52 @@ $ ./criar-admin.sh
 
 ❓ Confirma a criação? (s/N): s
 
-🔄 Criando usuário admin...
+🔄 Criando usuário admin no Supabase...
 
-✅ Usuário admin criado com sucesso!
+📝 Passo 1: Criando usuário no Supabase Auth...
+   ✅ Usuário criado no Auth (ID: 6490d79c...)
+
+📝 Passo 2: Inserindo na tabela users...
+   ✅ Perfil admin criado na tabela users
+
+==================================================
+✅ ADMIN CRIADO COM SUCESSO!
+==================================================
 
 📋 Credenciais:
    Email: admin@turguide.com
    Senha: (a que você digitou)
+   Tipo: Admin
 
-🌐 Acesse: http://localhost:3000/login
+🌐 Próximos passos:
+   1. Acesse: http://localhost:3000/login
+   2. Use o email e senha criados
+   3. Você será redirecionado para: /admin
 ```
 
 ---
 
-## 💻 Forma 2: cURL (Via Terminal)
+## 🗄️ Forma 2: SQL Direto no Supabase
 
-Se preferir fazer manualmente via terminal:
+Se preferir criar manualmente no Supabase Dashboard:
 
-```bash
-curl -X POST http://localhost:3000/api/users/create-admin \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "admin@turguide.com",
-    "password": "SenhaSegura123!",
-    "nome": "Administrador Sistema"
-  }'
-```
-
-**Resposta de sucesso:**
-```json
-{
-  "success": true,
-  "message": "Usuário admin criado com sucesso",
-  "user": {
-    "id": "uuid-aqui",
-    "email": "admin@turguide.com",
-    "nome": "Administrador Sistema",
-    "userType": "admin"
-  }
-}
-```
-
----
-
-## 🗄️ Forma 3: SQL Direto no Supabase
-
-Se preferir criar direto no banco de dados:
+### Passo 1: Criar Usuário no Auth
 
 1. Acesse: https://app.supabase.com
-2. Vá em **Authentication** → **Users**
-3. Clique em **"Add User"** ou **"Invite User"**
-4. Digite:
-   - Email: `admin@turguide.com`
-   - Password: (escolha uma senha)
-   - ✅ Marque "Auto Confirm User"
+2. Selecione seu projeto
+3. Vá em **Authentication** → **Users**
+4. Clique em **"Add User"** ou **"Invite User"**
+5. Preencha:
+   - **Email:** `admin@turguide.com`
+   - **Password:** (escolha uma senha segura)
+   - **Auto Confirm User:** ✅ Marque esta opção
+   - **User Metadata:** (opcional)
+6. Clique em **"Create User"**
 
-5. Depois, vá em **SQL Editor** e execute:
+### Passo 2: Inserir na Tabela Users
+
+1. Vá em **SQL Editor**
+2. Execute este SQL:
 
 ```sql
 -- Inserir ou atualizar usuário como admin
@@ -103,155 +102,190 @@ SELECT
 FROM auth.users
 WHERE email = 'admin@turguide.com'
 ON CONFLICT (email) 
-DO UPDATE SET user_type = 'admin';
+DO UPDATE SET user_type = 'admin', nome = 'Administrador Sistema';
 ```
+
+3. Clique em **"Run"**
+4. Verifique a mensagem: **"Success. 1 row affected"**
 
 ---
 
-## ✅ Verificar se Funcionou
+## ✅ Verificar se Admin Foi Criado
 
-### Opção 1: Via API
-```bash
-curl http://localhost:3000/api/users/create-admin
+### Via SQL no Supabase:
+
+```sql
+-- Listar todos os admins
+SELECT id, email, nome, user_type, created_at
+FROM users
+WHERE user_type = 'admin'
+ORDER BY created_at DESC;
 ```
 
-Deve retornar lista de admins:
-```json
-{
-  "success": true,
-  "admins": [
-    {
-      "id": "uuid",
-      "email": "admin@turguide.com",
-      "nome": "Administrador Sistema",
-      "user_type": "admin"
-    }
-  ],
-  "count": 1
-}
-```
+### Via Login:
 
-### Opção 2: Fazer Login
 1. Acesse: http://localhost:3000/login
-2. Use as credenciais criadas
+2. Digite o email e senha criados
 3. Se redirecionar para `/admin` → ✅ Sucesso!
 
 ---
 
 ## 🔧 Criar Múltiplos Admins
 
-Você pode criar vários admins:
+Execute o script várias vezes ou use SQL:
 
-```bash
-# Admin 1
-curl -X POST http://localhost:3000/api/users/create-admin \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "admin1@turguide.com",
-    "password": "Senha123!",
-    "nome": "Admin Principal"
-  }'
+```sql
+-- Admin 1
+INSERT INTO auth.users (email, encrypted_password, email_confirmed_at)
+VALUES ('admin1@turguide.com', crypt('Senha123', gen_salt('bf')), now());
 
-# Admin 2
-curl -X POST http://localhost:3000/api/users/create-admin \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "admin2@turguide.com",
-    "password": "Senha123!",
-    "nome": "Admin Secundário"
-  }'
+INSERT INTO users (id, email, nome, user_type)
+SELECT id, email, 'Admin 1', 'admin'
+FROM auth.users WHERE email = 'admin1@turguide.com';
+
+-- Admin 2
+INSERT INTO auth.users (email, encrypted_password, email_confirmed_at)
+VALUES ('admin2@turguide.com', crypt('Senha123', gen_salt('bf')), now());
+
+INSERT INTO users (id, email, nome, user_type)
+SELECT id, email, 'Admin 2', 'admin'
+FROM auth.users WHERE email = 'admin2@turguide.com';
 ```
 
 ---
 
-## ⚠️ Erros Comuns
+## ⚠️ Pré-Requisitos
 
-### Erro: "SUPABASE_SERVICE_ROLE_KEY não configurada"
+### Para usar o script `criar-admin.sh`:
 
-**Solução:** Adicione a variável de ambiente:
-
-1. Copie a `SUPABASE_SERVICE_ROLE_KEY` do Supabase
-2. Adicione no `.env.local`:
-   ```
+1. **Arquivo `.env.local` configurado:**
+   ```bash
+   NEXT_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
    SUPABASE_SERVICE_ROLE_KEY=sua_service_role_key_aqui
    ```
-3. Reinicie o servidor: `npm run dev`
 
-### Erro: "Email já existe"
+2. **Service Role Key do Supabase:**
+   - Acesse: https://app.supabase.com
+   - Vá em **Settings** → **API**
+   - Copie a **`service_role` key** (não a `anon` key!)
 
-**Solução:** A API atualiza automaticamente para admin. Só fazer login!
-
-### Erro: "Senha deve ter pelo menos 6 caracteres"
-
-**Solução:** Use senha com 6+ caracteres.
-
-### Erro: "Email inválido"
-
-**Solução:** Use formato válido: `usuario@dominio.com`
+3. **Permissões:**
+   ```bash
+   chmod +x criar-admin.sh
+   ```
 
 ---
 
-## 🔒 Segurança em Produção
+## 🔒 Por Que Este Método é Seguro?
 
-⚠️ **IMPORTANTE:** Esta API deve ser protegida em produção!
+### ❌ O QUE NÃO FIZEMOS (inseguro):
 
-**Opções de proteção:**
+- ~~API pública `/api/users/create-admin`~~ → Qualquer um poderia criar admins
+- ~~Endpoint sem autenticação~~ → Brechas de segurança
+- ~~Rota exposta na internet~~ → Ataques automatizados
 
-1. **Desabilitar após primeiro uso:**
-   ```typescript
-   // Em route.ts, adicionar no início:
-   if (process.env.NODE_ENV === 'production') {
-     return NextResponse.json({ error: 'Rota desabilitada' }, { status: 403 });
-   }
-   ```
+### ✅ O QUE FIZEMOS (seguro):
 
-2. **Exigir chave secreta:**
-   ```typescript
-   const secretKey = request.headers.get('X-Admin-Secret');
-   if (secretKey !== process.env.ADMIN_SECRET_KEY) {
-     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-   }
-   ```
+1. **Script local:** Roda apenas na sua máquina
+2. **Usa Service Role Key:** Credencial privada do Supabase
+3. **Não expõe API:** Nenhuma rota pública para criar admin
+4. **Acesso direto ao Supabase:** Bypass do Next.js
+5. **Sem interface web:** Não há formulário público de cadastro
 
-3. **Permitir apenas primeiro admin:**
-   ```typescript
-   const { data: existingAdmins } = await supabase
-     .from('users')
-     .select('id')
-     .eq('user_type', 'admin');
-   
-   if (existingAdmins && existingAdmins.length > 0) {
-     return NextResponse.json({ error: 'Admin já existe' }, { status: 403 });
-   }
-   ```
+---
+
+## 🆘 Erros Comuns
+
+### Erro: "Variáveis de ambiente não configuradas"
+
+**Solução:**
+```bash
+# Verifique se existe .env.local
+ls -la apps/web/.env.local
+
+# Se não existir, crie:
+cp apps/web/.env.example apps/web/.env.local
+
+# Edite e adicione suas credenciais:
+nano apps/web/.env.local
+```
+
+### Erro: "curl: command not found"
+
+**Solução:** Instale curl
+```bash
+# macOS
+brew install curl
+
+# Linux
+sudo apt-get install curl
+```
+
+### Erro: "Permission denied"
+
+**Solução:**
+```bash
+chmod +x criar-admin.sh
+```
+
+### Erro: "Usuário já existe no Auth"
+
+**Solução:** O usuário já foi criado. Apenas atualize na tabela users:
+```sql
+UPDATE users 
+SET user_type = 'admin' 
+WHERE email = 'admin@turguide.com';
+```
 
 ---
 
 ## 📝 Checklist de Criação
 
-- [ ] Servidor rodando (`npm run dev`)
-- [ ] Variáveis de ambiente configuradas (`.env.local`)
-- [ ] Execute o script ou curl
-- [ ] Verifique se admin foi criado
-- [ ] Teste login
-- [ ] Confirme acesso ao `/admin`
+- [ ] `.env.local` configurado com credenciais do Supabase
+- [ ] `SUPABASE_SERVICE_ROLE_KEY` definida
+- [ ] Permissão de execução no script (`chmod +x`)
+- [ ] Execute `./criar-admin.sh` ou use SQL
+- [ ] Verifique no Supabase Dashboard → Authentication → Users
+- [ ] Teste login em http://localhost:3000/login
+- [ ] Confirme redirecionamento para `/admin`
 
 ---
 
-## 🆘 Suporte
+## 🎯 Fluxo Completo
 
-Se nada funcionar:
-
-1. Verifique logs do servidor
-2. Verifique console do navegador
-3. Verifique tabela `users` no Supabase
-4. Verifique `auth.users` no Supabase
-
-**Comando para verificar:**
-```bash
-# Listar todos admins
-curl http://localhost:3000/api/users/create-admin
-
-# Logs do servidor
-# Verifique o terminal onde está rodando npm run dev
 ```
+1. Executar Script
+   ↓
+2. Script carrega .env.local
+   ↓
+3. Pede email, senha e nome
+   ↓
+4. Cria usuário no Supabase Auth (Admin API)
+   ↓
+5. Insere na tabela users com user_type='admin'
+   ↓
+6. Admin criado!
+   ↓
+7. Login → Redirecionado para /admin
+```
+
+---
+
+## 🔐 Credenciais de Teste
+
+Para desenvolvimento local, você pode usar:
+
+```
+Email: admin@turguide.com
+Senha: Admin123
+```
+
+**⚠️ NUNCA use credenciais simples em produção!**
+
+---
+
+## 📚 Referências
+
+- [Supabase Admin API](https://supabase.com/docs/reference/javascript/auth-admin-createuser)
+- [Supabase Auth](https://supabase.com/docs/guides/auth)
+- [Documentação do Projeto](./FLUXO_CADASTRO_LOGIN.md)
