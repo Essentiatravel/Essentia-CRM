@@ -15,7 +15,7 @@ interface Passeio {
   preco: number;
   duracao: string;
   categoria: string;
-  imagens?: string;
+  imagens?: string | string[] | null;
   capacidadeMaxima?: number;
   ativo: number;
 }
@@ -46,57 +46,42 @@ export default function PasseiosCards({ destaque = false, limite }: PasseiosCard
   useEffect(() => {
     const carregarPasseios = async () => {
       try {
+        console.log('🔄 Carregando passeios da API...');
         const response = await fetch('/api/passeios');
+        
+        console.log('📡 Status da resposta:', response.status);
+        
         if (response.ok) {
           let data = await response.json();
+          console.log('✅ Dados recebidos:', data.length, 'passeios');
           
           // Filtrar apenas passeios ativos (aceitar 1, true ou valores truthy)
           data = data.filter((passeio: Passeio) => Boolean(passeio.ativo));
+          
+          console.log('✅ Passeios ativos:', data.length);
           
           // Limitar quantidade se especificado
           if (limite) {
             data = data.slice(0, limite);
           }
           
+          // Se não houver dados, usar fallback
+          if (data.length === 0) {
+            console.warn('⚠️ Nenhum passeio encontrado no banco. Usando dados de demonstração.');
+            data = getDadosFallback();
+          }
+          
           setPasseios(data);
         } else {
-          console.error('Erro ao carregar passeios');
+          const errorData = await response.json().catch(() => ({}));
+          console.error('❌ Erro na API:', response.status, errorData);
+          console.log('📦 Usando dados de demonstração devido a erro na API');
+          setPasseios(getDadosFallback());
         }
       } catch (error) {
-        console.error('Erro ao carregar passeios:', error);
-        // Dados de fallback se a API falhar
-        setPasseios([
-          {
-            id: "1",
-            nome: "Tour Roma Histórica",
-            descricao: "Explore os pontos turísticos mais famosos de Roma",
-            preco: 120,
-            duracao: "4h",
-            categoria: "História",
-            capacidadeMaxima: 15,
-            ativo: 1
-          },
-          {
-            id: "2", 
-            nome: "Vaticano Completo",
-            descricao: "Visita guiada ao Vaticano e Capela Sistina",
-            preco: 150,
-            duracao: "3h", 
-            categoria: "Religioso",
-            capacidadeMaxima: 12,
-            ativo: 1
-          },
-          {
-            id: "3",
-            nome: "Toscana Day Trip", 
-            descricao: "Dia completo pela bela região da Toscana",
-            preco: 280,
-            duracao: "8h",
-            categoria: "Natureza", 
-            capacidadeMaxima: 20,
-            ativo: 1
-          }
-        ]);
+        console.error('❌ Erro ao carregar passeios:', error);
+        console.log('📦 Usando dados de demonstração devido a erro de rede');
+        setPasseios(getDadosFallback());
       } finally {
         setLoading(false);
       }
@@ -104,6 +89,70 @@ export default function PasseiosCards({ destaque = false, limite }: PasseiosCard
 
     carregarPasseios();
   }, [limite]);
+
+  // Função para retornar dados de fallback
+  const getDadosFallback = (): Passeio[] => [
+    {
+      id: "fallback-1",
+      nome: "Tour Paris Romântica",
+      descricao: "Descubra os encantos de Paris com guias especializados. Visite a Torre Eiffel, Louvre e muito mais!",
+      preco: 150,
+      duracao: "4h",
+      categoria: "Romance",
+      capacidadeMaxima: 15,
+      ativo: 1
+    },
+    {
+      id: "fallback-2",
+      nome: "Aventura nos Alpes",
+      descricao: "Trilhas incríveis pelos Alpes Suíços com vistas espetaculares e natureza preservada",
+      preco: 280,
+      duracao: "8h",
+      categoria: "Aventura",
+      capacidadeMaxima: 12,
+      ativo: 1
+    },
+    {
+      id: "fallback-3",
+      nome: "Gastronomia Italiana",
+      descricao: "Tour gastronômico pela Toscana com degustação de vinhos e pratos típicos",
+      preco: 200,
+      duracao: "6h",
+      categoria: "Gastronomia",
+      capacidadeMaxima: 10,
+      ativo: 1
+    },
+    {
+      id: "fallback-4",
+      nome: "História de Roma",
+      descricao: "Explore o Coliseu, Fórum Romano e outros monumentos históricos com guias especializados",
+      preco: 120,
+      duracao: "5h",
+      categoria: "História",
+      capacidadeMaxima: 20,
+      ativo: 1
+    },
+    {
+      id: "fallback-5",
+      nome: "Arte e Cultura",
+      descricao: "Visite os principais museus e galerias de arte da cidade",
+      preco: 90,
+      duracao: "3h",
+      categoria: "Cultural",
+      capacidadeMaxima: 15,
+      ativo: 1
+    },
+    {
+      id: "fallback-6",
+      nome: "Natureza Selvagem",
+      descricao: "Explore parques nacionais e observe a fauna local em seu habitat natural",
+      preco: 180,
+      duracao: "7h",
+      categoria: "Natureza",
+      capacidadeMaxima: 8,
+      ativo: 1
+    }
+  ];
 
   if (loading) {
     return (
@@ -168,28 +217,61 @@ export default function PasseiosCards({ destaque = false, limite }: PasseiosCard
                 </div>
                 {(() => {
                   // Parse imagens do passeio - parsing robusto
+                  const rawImagens = passeio.imagens;
                   let imagensArray: string[] = [];
 
-                  if (passeio.imagens) {
+                  if (rawImagens) {
                     try {
-                      // Se já é array, usa diretamente
-                      if (Array.isArray(passeio.imagens)) {
-                        imagensArray = passeio.imagens;
+                      if (Array.isArray(rawImagens)) {
+                        imagensArray = rawImagens
+                          .filter((item): item is string => typeof item === 'string')
+                          .map((item) => item.trim())
+                          .filter((item) => item.length > 0);
+                      } else if (typeof rawImagens === 'string') {
+                        const trimmed = rawImagens.trim();
+                        if (trimmed) {
+                          try {
+                            const parsed = JSON.parse(trimmed);
+                            if (Array.isArray(parsed)) {
+                              imagensArray = parsed
+                                .filter((item): item is string => typeof item === 'string')
+                                .map((item) => item.trim())
+                                .filter((item) => item.length > 0);
+                            } else if (typeof parsed === 'string') {
+                              imagensArray = [parsed];
+                            }
+                          } catch {
+                            if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+                              imagensArray = trimmed
+                                .replace(/^[\[\s]+|[\]\s]+$/g, '')
+                                .split(',')
+                                .map((item) => item.replace(/^"|"$/g, '').trim())
+                                .filter((item) => Boolean(item));
+                            } else {
+                              imagensArray = [trimmed];
+                            }
+                          }
+                        }
+                      } else if (typeof rawImagens === 'object') {
+                        const serialized = JSON.stringify(rawImagens);
+                        const parsed = JSON.parse(serialized);
+                        if (Array.isArray(parsed)) {
+                          imagensArray = parsed
+                            .filter((item): item is string => typeof item === 'string')
+                            .map((item) => item.trim())
+                            .filter((item) => item.length > 0);
+                        }
                       }
-                      // Se é string, tenta fazer parse
-                      else if (typeof passeio.imagens === 'string') {
-                        const parsed = JSON.parse(passeio.imagens);
-                        imagensArray = Array.isArray(parsed) ? parsed : [];
-                      }
-                    } catch (error) {
-                      // Fallback: se é string simples que parece caminho, coloca em array
-                      if (typeof passeio.imagens === 'string' && passeio.imagens.startsWith('/')) {
-                        imagensArray = [passeio.imagens];
+                    } catch {
+                      if (typeof rawImagens === 'string' && rawImagens.trim()) {
+                        imagensArray = [rawImagens.trim()];
+                      } else {
+                        imagensArray = [];
                       }
                     }
                   }
 
-                  const primeiraImagem = imagensArray && imagensArray.length > 0 ? imagensArray[0] : null;
+                  const primeiraImagem = imagensArray.length > 0 ? imagensArray[0] : null;
                   const emoji = emojisPorCategoria[passeio.categoria] || "🏛️";
 
                   // Se houver imagem do Supabase, exibir

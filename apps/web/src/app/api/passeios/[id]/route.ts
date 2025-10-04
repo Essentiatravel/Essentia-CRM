@@ -21,6 +21,67 @@ const passeios = pgTable("passeios", {
   atualizadoEm: timestamp("atualizado_em").defaultNow(),
 });
 
+const ensureArray = (value: unknown): string[] => {
+  if (!value && value !== 0) {
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .filter((item): item is string => typeof item === 'string')
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return [];
+    }
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .filter((item): item is string => typeof item === 'string')
+          .map((item) => item.trim())
+          .filter((item) => item.length > 0);
+      }
+
+      if (parsed && typeof parsed === 'string') {
+        return [parsed];
+      }
+    } catch (error) {
+      try {
+        const normalized = trimmed
+          .replace(/^[\[\s]+|[\]\s]+$/g, '')
+          .split(',')
+          .map((item) => item.replace(/^"|"$/g, '').trim())
+          .filter(Boolean);
+
+        if (normalized.length > 1) {
+          return normalized;
+        }
+      } catch {
+        // Ignorar erros do fallback manual
+      }
+
+      return [trimmed];
+    }
+  }
+
+  if (typeof value === 'object' && value !== null) {
+    try {
+      const serialized = JSON.stringify(value);
+      return ensureArray(serialized);
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+};
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -39,12 +100,9 @@ export async function GET(
     // Garantir que campos JSON sejam arrays
     const passeioFormatado = {
       ...passeio[0],
-      imagens: Array.isArray(passeio[0].imagens) ? passeio[0].imagens : 
-               (typeof passeio[0].imagens === 'string' ? JSON.parse(passeio[0].imagens) : []),
-      inclusoes: Array.isArray(passeio[0].inclusoes) ? passeio[0].inclusoes :
-                 (typeof passeio[0].inclusoes === 'string' ? JSON.parse(passeio[0].inclusoes) : []),
-      idiomas: Array.isArray(passeio[0].idiomas) ? passeio[0].idiomas :
-               (typeof passeio[0].idiomas === 'string' ? JSON.parse(passeio[0].idiomas) : []),
+      imagens: ensureArray(passeio[0].imagens),
+      inclusoes: ensureArray(passeio[0].inclusoes),
+      idiomas: ensureArray(passeio[0].idiomas),
     };
 
     console.log('✅ Passeio encontrado e formatado:', passeioFormatado);
