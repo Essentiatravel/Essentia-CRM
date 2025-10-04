@@ -1,25 +1,7 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { eq } from 'drizzle-orm';
+import { supabase } from '@/lib/supabase';
 
-// Schema inline para evitar problemas de import
-import { pgTable, text, integer, real, timestamp, varchar, jsonb } from "drizzle-orm/pg-core";
-
-const passeios = pgTable("passeios", {
-  id: varchar("id").primaryKey(),
-  nome: varchar("nome").notNull(),
-  descricao: text("descricao").notNull(),
-  preco: real("preco").notNull(),
-  duracao: varchar("duracao").notNull(),
-  categoria: varchar("categoria").notNull(),
-  imagens: jsonb("imagens"),
-  inclusoes: jsonb("inclusoes"),
-  idiomas: jsonb("idiomas"),
-  capacidadeMaxima: integer("capacidade_maxima").default(20),
-  ativo: integer("ativo").default(1),
-  criadoEm: timestamp("criado_em").defaultNow(),
-  atualizadoEm: timestamp("atualizado_em").defaultNow(),
-});
+// Usar Supabase JS Client para melhor compatibilidade e performance
 
 const ensureArray = (value: unknown): string[] => {
   if (!value && value !== 0) {
@@ -170,21 +152,25 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    console.log('🔍 Buscando passeio no banco:', id);
+    console.log('🔍 Buscando passeio no banco via Supabase:', id);
 
-    const passeio = await db.select().from(passeios).where(eq(passeios.id, id)).limit(1);
+    const { data: passeio, error } = await supabase
+      .from('passeios')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (passeio.length === 0) {
-      console.log('❌ Passeio não encontrado:', id);
+    if (error || !passeio) {
+      console.log('❌ Passeio não encontrado:', id, error);
       return NextResponse.json({ error: 'Passeio não encontrado' }, { status: 404 });
     }
 
     // Garantir que campos JSON sejam arrays
     const passeioFormatado = {
-      ...passeio[0],
-      imagens: ensureArray(passeio[0].imagens),
-      inclusoes: ensureArray(passeio[0].inclusoes),
-      idiomas: ensureArray(passeio[0].idiomas),
+      ...passeio,
+      imagens: ensureArray(passeio.imagens),
+      inclusoes: ensureArray(passeio.inclusoes),
+      idiomas: ensureArray(passeio.idiomas),
     };
 
     console.log('✅ Passeio encontrado e formatado:', passeioFormatado);
@@ -214,42 +200,50 @@ export async function PUT(
   try {
     const { id } = await params;
     const passeioData = await request.json();
-    
-    console.log('🔄 Atualizando passeio:', id, passeioData);
+
+    console.log('🔄 Atualizando passeio via Supabase:', id, passeioData);
 
     const dadosAtualizados = {
       nome: passeioData.name || passeioData.nome,
       descricao: passeioData.description || passeioData.descricao || "Descrição não informada",
       preco: parseFloat(passeioData.price || passeioData.preco) || 0,
-      duracao: `${passeioData.duration || passeioData.duracao}h`,
+      duracao: passeioData.duration ? `${passeioData.duration}h` : passeioData.duracao,
       categoria: passeioData.type || passeioData.categoria,
-      // Armazenar como arrays nativos (Drizzle converte para JSONB)
+      // Armazenar como arrays nativos (Supabase converte para JSONB)
       imagens: passeioData.images || [],
       inclusoes: passeioData.includedItems || [],
       idiomas: passeioData.languages || [],
-      capacidadeMaxima: parseInt(passeioData.maxPeople) || 20,
+      capacidade_maxima: parseInt(passeioData.maxPeople) || 20,
       ativo: passeioData.status === 'Ativo' ? 1 : 0,
-      atualizadoEm: new Date()
+      atualizado_em: new Date().toISOString()
     };
 
-    const resultado = await db
-      .update(passeios)
-      .set(dadosAtualizados)
-      .where(eq(passeios.id, id))
-      .returning();
+    const { data, error } = await supabase
+      .from('passeios')
+      .update(dadosAtualizados)
+      .eq('id', id)
+      .select();
 
-    if (resultado.length === 0) {
+    if (error) {
+      console.error('❌ Erro ao atualizar passeio:', error);
+      return NextResponse.json(
+        { error: 'Erro ao atualizar passeio: ' + error.message },
+        { status: 500 }
+      );
+    }
+
+    if (!data || data.length === 0) {
       return NextResponse.json(
         { error: 'Passeio não encontrado para atualização' },
         { status: 404 }
       );
     }
 
-    console.log('✅ Passeio atualizado com sucesso:', resultado[0]);
+    console.log('✅ Passeio atualizado com sucesso:', data[0]);
 
     return NextResponse.json({
       message: 'Passeio atualizado com sucesso',
-      passeio: resultado[0]
+      passeio: data[0]
     });
   } catch (error) {
     console.error('❌ Erro ao atualizar passeio:', error);
@@ -267,15 +261,24 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    
-    console.log('🗑️ Excluindo passeio:', id);
 
-    const resultado = await db
-      .delete(passeios)
-      .where(eq(passeios.id, id))
-      .returning();
+    console.log('🗑️ Excluindo passeio via Supabase:', id);
 
-    if (resultado.length === 0) {
+    const { data, error } = await supabase
+      .from('passeios')
+      .delete()
+      .eq('id', id)
+      .select();
+
+    if (error) {
+      console.error('❌ Erro ao excluir passeio:', error);
+      return NextResponse.json(
+        { error: 'Erro ao excluir passeio: ' + error.message },
+        { status: 500 }
+      );
+    }
+
+    if (!data || data.length === 0) {
       return NextResponse.json(
         { error: 'Passeio não encontrado para exclusão' },
         { status: 404 }

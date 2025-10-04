@@ -36,7 +36,11 @@
       "Bash(kill:*)",
       "Bash(git rm:*)",
       "Bash(openssl rand:*)",
-      "Bash(ping:*)"
+      "Bash(ping:*)",
+      "Bash(node:*)",
+      "Bash(source:*)",
+      "Bash(SUPABASE_DB_URL=\"postgresql://postgres:Essentia%402025@db.nvviwqoxeznxpzitpwua.supabase.co:5432/postgres\" node test-db.mjs)",
+      "Bash(awk:*)"
     ],
     "deny": [],
     "ask": []

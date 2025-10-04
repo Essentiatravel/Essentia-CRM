@@ -1,24 +1,8 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { supabase } from '@/lib/supabase';
 
-// Schema inline para evitar problemas de import
-import { pgTable, text, integer, real, timestamp, varchar, jsonb } from "drizzle-orm/pg-core";
-
-const passeios = pgTable("passeios", {
-  id: varchar("id").primaryKey(),
-  nome: varchar("nome").notNull(),
-  descricao: text("descricao").notNull(),
-  preco: real("preco").notNull(),
-  duracao: varchar("duracao").notNull(),
-  categoria: varchar("categoria").notNull(),
-  imagens: jsonb("imagens"),
-  inclusoes: jsonb("inclusoes"),
-  idiomas: jsonb("idiomas"),
-  capacidadeMaxima: integer("capacidade_maxima").default(20),
-  ativo: integer("ativo").default(1),
-  criadoEm: timestamp("criado_em").defaultNow(),
-  atualizadoEm: timestamp("atualizado_em").defaultNow(),
-});
+// Usar Supabase JS Client para melhor compatibilidade e performance
+// O cliente Supabase usa REST API que é mais confiável que conexões PostgreSQL diretas
 
 const ensureArray = (value: unknown): string[] => {
   if (!value && value !== 0) {
@@ -83,30 +67,42 @@ const ensureArray = (value: unknown): string[] => {
 
 export async function GET() {
   try {
-    console.log('🔄 Buscando passeios no banco de dados...');
-    const todosPasseios = await db.select().from(passeios);
-    console.log(`✅ ${todosPasseios.length} passeios encontrados no banco`);
+    console.log('🔄 Buscando passeios no banco de dados via Supabase...');
+
+    // Usar Supabase JS client para melhor compatibilidade
+    const { data: todosPasseios, error } = await supabase
+      .from('passeios')
+      .select('*')
+      .eq('ativo', 1);
+
+    if (error) {
+      console.error('❌ Erro ao buscar passeios do Supabase:', error);
+      console.log('📦 Retornando dados de demonstração devido ao erro');
+      return NextResponse.json(getDadosDemonstracao());
+    }
+
+    console.log(`✅ ${todosPasseios?.length || 0} passeios encontrados no banco`);
 
     // Garantir que campos JSON sejam arrays e nunca quebrem o endpoint
-    const passeiosFormatados = todosPasseios.map((p) => ({
+    const passeiosFormatados = (todosPasseios || []).map((p: any) => ({
       ...p,
       imagens: ensureArray(p.imagens),
       inclusoes: ensureArray(p.inclusoes),
       idiomas: ensureArray(p.idiomas),
     }));
-    
+
     // Se não houver passeios, retornar dados de demonstração
     if (passeiosFormatados.length === 0) {
       console.warn('⚠️ Banco de dados vazio. Retornando dados de demonstração.');
       return NextResponse.json(getDadosDemonstracao());
     }
-    
+
     return NextResponse.json(passeiosFormatados);
   } catch (error) {
     console.error('❌ Erro ao buscar passeios:', error);
     console.error('Stack trace:', error instanceof Error ? error.stack : 'N/A');
     console.log('📦 Retornando dados de demonstração devido ao erro');
-    
+
     // Retornar dados de demonstração ao invés de erro 500
     return NextResponse.json(getDadosDemonstracao());
   }
@@ -213,7 +209,7 @@ export async function POST(request: Request) {
     const passeioData = await request.json();
 
     const novoPasseioId = `passeio_${Date.now()}`;
-    
+
     const novoPasseio = {
       id: novoPasseioId,
       nome: passeioData.name || passeioData.nome,
@@ -221,20 +217,31 @@ export async function POST(request: Request) {
       preco: parseFloat(passeioData.price || passeioData.preco) || 0,
       duracao: `${passeioData.duration || passeioData.duracao}h`,
       categoria: passeioData.type || passeioData.categoria,
-      // Armazenar como arrays nativos (Drizzle converte para JSONB)
+      // Armazenar como arrays nativos (Supabase converte para JSONB)
       imagens: passeioData.images || [],
       inclusoes: passeioData.includedItems || [],
       idiomas: passeioData.languages || [],
-      capacidadeMaxima: parseInt(passeioData.maxPeople) || 20,
+      capacidade_maxima: parseInt(passeioData.maxPeople) || 20,
       ativo: 1
     };
 
-    await db.insert(passeios).values(novoPasseio);
+    const { data, error } = await supabase
+      .from('passeios')
+      .insert([novoPasseio])
+      .select();
+
+    if (error) {
+      console.error('Erro ao criar passeio:', error);
+      return NextResponse.json(
+        { error: 'Erro ao criar passeio: ' + error.message },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       id: novoPasseio.id,
       message: 'Passeio criado com sucesso',
-      passeio: novoPasseio
+      passeio: data?.[0] || novoPasseio
     });
   } catch (error) {
     console.error('Erro ao criar passeio:', error);

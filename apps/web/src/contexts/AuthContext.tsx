@@ -182,11 +182,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error("Erro ao sair do Supabase:", error.message);
+    try {
+      console.log('🔄 Fazendo logout...');
+
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Erro ao sair do Supabase:", error.message);
+      }
+
+      // Limpar estado do usuário
+      setUser(null);
+
+      // Limpar localStorage (sessões, tokens, etc)
+      if (typeof window !== 'undefined') {
+        localStorage.clear();
+        sessionStorage.clear();
+      }
+
+      console.log('✅ Logout concluído, redirecionando...');
+
+      // Redirecionar para página de login
+      window.location.href = '/login';
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+      // Mesmo com erro, limpar estado e redirecionar
+      setUser(null);
+      if (typeof window !== 'undefined') {
+        localStorage.clear();
+        sessionStorage.clear();
+      }
+      window.location.href = '/login';
     }
-    setUser(null);
   };
 
   return (
