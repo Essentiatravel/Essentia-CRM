@@ -47,16 +47,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Função para buscar dados do usuário da tabela users
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log("🔍 Buscando perfil do usuário:", userId);
+      
       const { data, error } = await supabase
         .from("users")
         .select("*")
         .eq("id", userId)
         .maybeSingle();
 
-      if (error || !data) {
-        console.error("Erro ao buscar perfil do usuário:", error?.message);
+      if (error) {
+        console.error("❌ Erro ao buscar perfil do usuário:", error?.message);
         return null;
       }
+
+      if (!data) {
+        console.warn("⚠️ Usuário não encontrado na tabela users, usando metadata");
+        return null;
+      }
+
+      console.log("✅ Perfil encontrado:", data);
 
       const [firstName, ...lastNameParts] = (data.nome || "").split(" ");
       return {
@@ -72,38 +81,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         cpf: data.cpf,
       };
     } catch (error) {
-      console.error("Erro ao buscar perfil:", error);
+      console.error("❌ Erro ao buscar perfil:", error);
       return null;
     }
   };
 
   useEffect(() => {
     const getSession = async () => {
+      console.log("🔄 Iniciando verificação de sessão...");
+      
       const {
         data: { session },
         error,
       } = await supabase.auth.getSession();
 
       if (error) {
-        console.error("Erro ao carregar sessão Supabase:", error.message);
+        console.error("❌ Erro ao carregar sessão Supabase:", error.message);
         setUser(null);
         setLoading(false);
         return;
       }
 
       if (!session?.user) {
+        console.log("ℹ️ Nenhuma sessão ativa encontrada");
         setUser(null);
         setLoading(false);
         return;
       }
 
+      console.log("✅ Sessão encontrada para usuário:", session.user.email);
+
       // Buscar dados completos do usuário da tabela users
       const profile = await fetchUserProfile(session.user.id);
       if (profile) {
+        console.log("✅ Usando perfil da tabela users:", profile);
         setUser(profile);
       } else {
         // Fallback para user_metadata se não encontrar na tabela
         const metadata = session.user.user_metadata ?? {};
+        console.log("⚠️ Usando metadata do Supabase:", metadata);
         setUser({
           id: session.user.id,
           email: session.user.email ?? "",
@@ -116,6 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
       }
       setLoading(false);
+      console.log("✅ Autenticação concluída");
     };
 
     getSession();
