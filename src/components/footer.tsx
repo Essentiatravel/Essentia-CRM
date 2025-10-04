@@ -20,22 +20,24 @@ export default function Footer() {
               Explore a Itália com quem entende. Sua jornada dos sonhos começa aqui.
             </p>
             <div className="flex space-x-4">
-              <Button 
-                size="icon" 
-                variant="outline" 
-                className="border-pink-500 bg-gradient-to-br from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white border-0"
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-md bg-gradient-to-br from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 flex items-center justify-center transition-all shadow-lg hover:shadow-xl"
                 aria-label="Instagram"
               >
-                <Instagram className="w-4 h-4" />
-              </Button>
-              <Button 
-                size="icon" 
-                variant="outline"
-                className="border-green-500 bg-green-500 hover:bg-green-600 text-white border-0"
+                <Instagram className="w-5 h-5 text-white" />
+              </a>
+              <a
+                href="https://wa.me/5511999999999"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-md bg-green-500 hover:bg-green-600 flex items-center justify-center transition-all shadow-lg hover:shadow-xl"
                 aria-label="WhatsApp"
               >
-                <MessageCircle className="w-4 h-4" />
-              </Button>
+                <MessageCircle className="w-5 h-5 text-white" />
+              </a>
             </div>
           </motion.div>
 
