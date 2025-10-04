@@ -42,9 +42,9 @@ interface Passeio {
   preco: number;
   duracao: string;
   categoria: string;
-  imagens?: string;
-  inclusoes?: string;
-  idiomas?: string;
+  imagens?: string[];
+  inclusoes?: string[];
+  idiomas?: string[];
   capacidadeMaxima?: number;
   ativo: number;
 }
@@ -172,8 +172,8 @@ export default function PasseioDetalhes() {
     );
   }
 
-  const inclusoes = Array.isArray(passeio.inclusoes) ? passeio.inclusoes : (passeio.inclusoes ? JSON.parse(passeio.inclusoes) : []);
-  const idiomas = Array.isArray(passeio.idiomas) ? passeio.idiomas : (passeio.idiomas ? JSON.parse(passeio.idiomas) : []);
+  const inclusoes = passeio.inclusoes || [];
+  const idiomas = passeio.idiomas || [];
   const valorTotal = passeio.preco * selectedPeople;
   const desconto = isGroup && selectedPeople >= 5 ? 0.1 : 0;
   const valorFinal = valorTotal * (1 - desconto);
@@ -224,29 +224,8 @@ export default function PasseioDetalhes() {
                   </Badge>
                 </div>
                 {(() => {
-                  // Parse imagens do passeio - parsing robusto  
-                  let imagensArray: string[] = [];
-                  
-                  if (passeio.imagens) {
-                    try {
-                      // Se já é array, usa diretamente
-                      if (Array.isArray(passeio.imagens)) {
-                        imagensArray = passeio.imagens;
-                      } 
-                      // Se é string, tenta fazer parse
-                      else if (typeof passeio.imagens === 'string') {
-                        imagensArray = JSON.parse(passeio.imagens);
-                      }
-                    } catch (error) {
-                      console.warn('Erro ao fazer parse das imagens:', passeio.imagens, error);
-                      // Fallback: se é string simples, coloca em array
-                      if (typeof passeio.imagens === 'string' && passeio.imagens.startsWith('/')) {
-                        imagensArray = [passeio.imagens];
-                      }
-                    }
-                  }
-
-                  const primeiraImagem = imagensArray && imagensArray.length > 0 ? imagensArray[0] : null;
+                  const imagensArray = passeio.imagens || [];
+                  const primeiraImagem = imagensArray.length > 0 ? imagensArray[0] : null;
 
                   if (primeiraImagem) {
                     return (

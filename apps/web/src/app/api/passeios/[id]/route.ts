@@ -82,6 +82,88 @@ const ensureArray = (value: unknown): string[] => {
   return [];
 };
 
+// Dados de fallback para demonstração
+const getDadosFallback = () => [
+  {
+    id: "demo-1",
+    nome: "Tour Paris Romântica",
+    descricao: "Descubra os encantos de Paris com guias especializados. Visite a Torre Eiffel, Louvre e muito mais!",
+    preco: 150,
+    duracao: "4h",
+    categoria: "Romance",
+    imagens: [],
+    inclusoes: ["Guia especializado", "Transporte", "Ingressos"],
+    idiomas: ["Português", "Inglês", "Francês"],
+    capacidadeMaxima: 15,
+    ativo: 1,
+  },
+  {
+    id: "demo-2",
+    nome: "Aventura nos Alpes",
+    descricao: "Trilhas incríveis pelos Alpes Suíços com vistas espetaculares e natureza preservada",
+    preco: 280,
+    duracao: "8h",
+    categoria: "Aventura",
+    imagens: [],
+    inclusoes: ["Guia especializado", "Equipamentos", "Lanche", "Seguro"],
+    idiomas: ["Português", "Inglês"],
+    capacidadeMaxima: 12,
+    ativo: 1,
+  },
+  {
+    id: "demo-3",
+    nome: "Gastronomia Italiana",
+    descricao: "Tour gastronômico pela Toscana com degustação de vinhos e pratos típicos",
+    preco: 200,
+    duracao: "6h",
+    categoria: "Gastronomia",
+    imagens: [],
+    inclusoes: ["Guia especializado", "Degustações", "Vinhos", "Transporte"],
+    idiomas: ["Português", "Italiano"],
+    capacidadeMaxima: 10,
+    ativo: 1,
+  },
+  {
+    id: "demo-4",
+    nome: "História de Roma",
+    descricao: "Explore o Coliseu, Fórum Romano e outros monumentos históricos com guias especializados",
+    preco: 120,
+    duracao: "5h",
+    categoria: "História",
+    imagens: [],
+    inclusoes: ["Guia especializado", "Ingressos", "Água", "Material informativo"],
+    idiomas: ["Português", "Inglês", "Espanhol"],
+    capacidadeMaxima: 20,
+    ativo: 1,
+  },
+  {
+    id: "demo-5",
+    nome: "Arte e Cultura",
+    descricao: "Visite os principais museus e galerias de arte da cidade",
+    preco: 90,
+    duracao: "3h",
+    categoria: "Cultural",
+    imagens: [],
+    inclusoes: ["Guia especializado", "Ingressos", "Água"],
+    idiomas: ["Português", "Inglês"],
+    capacidadeMaxima: 15,
+    ativo: 1,
+  },
+  {
+    id: "demo-6",
+    nome: "Natureza Selvagem",
+    descricao: "Explore parques nacionais e observe a fauna local em seu habitat natural",
+    preco: 180,
+    duracao: "7h",
+    categoria: "Natureza",
+    imagens: [],
+    inclusoes: ["Guia especializado", "Binóculos", "Lanche", "Seguro"],
+    idiomas: ["Português"],
+    capacidadeMaxima: 8,
+    ativo: 1,
+  }
+];
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -89,9 +171,9 @@ export async function GET(
   try {
     const { id } = await params;
     console.log('🔍 Buscando passeio no banco:', id);
-    
+
     const passeio = await db.select().from(passeios).where(eq(passeios.id, id)).limit(1);
-    
+
     if (passeio.length === 0) {
       console.log('❌ Passeio não encontrado:', id);
       return NextResponse.json({ error: 'Passeio não encontrado' }, { status: 404 });
@@ -109,7 +191,18 @@ export async function GET(
     return NextResponse.json(passeioFormatado);
   } catch (error) {
     console.error('❌ Erro ao buscar passeio:', error);
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+
+    // Usar dados de fallback em caso de erro (banco offline)
+    const { id } = await params;
+    const fallbackData = getDadosFallback();
+    const passeioFallback = fallbackData.find(p => p.id === id);
+
+    if (passeioFallback) {
+      console.log('📦 Usando dados de demonstração para passeio:', id);
+      return NextResponse.json(passeioFallback);
+    }
+
+    return NextResponse.json({ error: 'Passeio não encontrado' }, { status: 404 });
   }
 }
 

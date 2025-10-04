@@ -35,7 +35,8 @@
       "Bash(npm install:*)",
       "Bash(kill:*)",
       "Bash(git rm:*)",
-      "Bash(openssl rand:*)"
+      "Bash(openssl rand:*)",
+      "Bash(ping:*)"
     ],
     "deny": [],
     "ask": []
