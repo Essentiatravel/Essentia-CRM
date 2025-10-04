@@ -471,26 +471,65 @@ const AgendamentosPage: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchAllData = async () => {
-      try {
-        const [passeiosData, clientesData, guiasData] = await Promise.all([
-          fetchPasseios(),
-          fetchClientes(),
-          fetchGuias(),
-        ]);
-        await fetchAgendamentos(passeiosData, clientesData, guiasData);
-      } catch (error) {
-        console.error('Erro ao carregar dados:', error);
+  // Função otimizada que busca todos os dados em uma única requisição
+  const fetchAllDataOptimized = async () => {
+    setLoadingAgendamentos(true);
+    setLoadingPasseios(true);
+    setLoadingClientes(true);
+    setLoadingGuias(true);
+
+    try {
+      const response = await fetch('/api/agendamentos/all-data', {
+        headers: { 'Cache-Control': 'no-cache' },
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao carregar dados');
       }
-    };
-    
-    fetchAllData();
+
+      const data = await response.json();
+
+      // Mapear passeios
+      const passeiosData = (Array.isArray(data.passeios) ? data.passeios : []).map(normalizePasseio);
+      setPasseios(passeiosData);
+
+      // Mapear clientes
+      const clientesData = (Array.isArray(data.clientes) ? data.clientes : []).map(normalizeCliente);
+      setClientes(clientesData);
+
+      // Mapear guias
+      const guiasData = (Array.isArray(data.guias) ? data.guias : []).map(normalizeGuia);
+      setGuias(guiasData);
+
+      // Mapear agendamentos
+      const agendamentosData = (Array.isArray(data.agendamentos) ? data.agendamentos : []).map((item: any, index: number) =>
+        normalizeAgendamento(item, { passeios: passeiosData, clientes: clientesData, guias: guiasData }, index)
+      );
+      setAgendamentos(agendamentosData);
+
+      toast.success('Dados carregados com sucesso');
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+      toast.error('Não foi possível carregar os dados.');
+      setAgendamentos([]);
+      setPasseios([]);
+      setClientes([]);
+      setGuias([]);
+    } finally {
+      setLoadingAgendamentos(false);
+      setLoadingPasseios(false);
+      setLoadingClientes(false);
+      setLoadingGuias(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllDataOptimized();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const refetchAgendamentos = async () => {
-    await fetchAgendamentos(passeios, clientes, guias);
+    await fetchAllDataOptimized();
   };
 
   const onDragEnd = async (result: DropResult) => {

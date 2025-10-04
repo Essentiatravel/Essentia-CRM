@@ -47,25 +47,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Função para buscar dados do usuário da tabela users
   const fetchUserProfile = async (userId: string) => {
     try {
-      console.log("🔍 Buscando perfil do usuário:", userId);
-      
       const { data, error } = await supabase
         .from("users")
         .select("*")
         .eq("id", userId)
         .maybeSingle();
 
-      if (error) {
-        console.error("❌ Erro ao buscar perfil do usuário:", error?.message);
+      if (error || !data) {
         return null;
       }
-
-      if (!data) {
-        console.warn("⚠️ Usuário não encontrado na tabela users, usando metadata");
-        return null;
-      }
-
-      console.log("✅ Perfil encontrado:", data);
 
       const [firstName, ...lastNameParts] = (data.nome || "").split(" ");
       return {
@@ -74,52 +64,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         nome: data.nome,
         firstName: firstName || "",
         lastName: lastNameParts.join(" ") || "",
-        userType: data.user_type || data.userType, // Aceitar ambos os nomes
+        userType: data.user_type || data.userType,
         telefone: data.telefone,
         endereco: data.endereco,
         data_nascimento: data.dataNascimento,
         cpf: data.cpf,
       };
     } catch (error) {
-      console.error("❌ Erro ao buscar perfil:", error);
       return null;
     }
   };
 
   useEffect(() => {
     const getSession = async () => {
-      console.log("🔄 Iniciando verificação de sessão...");
-      
       const {
         data: { session },
         error,
       } = await supabase.auth.getSession();
 
-      if (error) {
-        console.error("❌ Erro ao carregar sessão Supabase:", error.message);
+      if (error || !session?.user) {
         setUser(null);
         setLoading(false);
         return;
       }
-
-      if (!session?.user) {
-        console.log("ℹ️ Nenhuma sessão ativa encontrada");
-        setUser(null);
-        setLoading(false);
-        return;
-      }
-
-      console.log("✅ Sessão encontrada para usuário:", session.user.email);
 
       // Buscar dados completos do usuário da tabela users
       const profile = await fetchUserProfile(session.user.id);
       if (profile) {
-        console.log("✅ Usando perfil da tabela users:", profile);
         setUser(profile);
       } else {
         // Fallback para user_metadata se não encontrar na tabela
         const metadata = session.user.user_metadata ?? {};
-        console.log("⚠️ Usando metadata do Supabase:", metadata);
         setUser({
           id: session.user.id,
           email: session.user.email ?? "",
@@ -132,7 +107,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
       }
       setLoading(false);
-      console.log("✅ Autenticação concluída");
     };
 
     getSession();
@@ -169,12 +143,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      console.error("Erro no login do Supabase:", error.message);
-      return { error: error.message };
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password 
+      });
+      
+      if (error) {
+        return { error: error.message };
+      }
+
+      // Buscar dados do usuário imediatamente após login
+      if (data.user) {
+        const profile = await fetchUserProfile(data.user.id);
+        if (profile) {
+          setUser(profile);
+        } else {
+          const metadata = data.user.user_metadata ?? {};
+          setUser({
+            id: data.user.id,
+            email: data.user.email ?? "",
+            nome: metadata.nome,
+            userType: metadata.userType,
+            telefone: metadata.telefone,
+            endereco: metadata.endereco,
+            data_nascimento: metadata.data_nascimento,
+            cpf: metadata.cpf,
+          });
+        }
+      }
+      
+      return {};
+    } catch (error) {
+      return { error: "Erro ao fazer login" };
     }
-    return {};
   };
 
   const signup: AuthContextType["signup"] = async ({ email, password, nome, userType, metadata }) => {

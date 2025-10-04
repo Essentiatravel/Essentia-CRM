@@ -42,11 +42,11 @@ export default function ProtectedRoute({
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">
-            {loading ? "Verificando acesso..." : "Redirecionando para login..."}
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-3 text-gray-600 text-sm">
+            {loading ? "Carregando..." : "Redirecionando..."}
           </p>
         </div>
       </div>
@@ -55,10 +55,10 @@ export default function ProtectedRoute({
 
   if (user.userType && !allowedTypes.includes(user.userType)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Redirecionando...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-3 text-gray-600 text-sm">Redirecionando...</p>
         </div>
       </div>
     );

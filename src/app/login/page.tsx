@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,8 +13,9 @@ import { useAuth } from "@/contexts/AuthContext";
 
 function LoginForm() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const redirectTo = searchParams.get("redirect") || "/admin";
-  const { login } = useAuth();
+  const { login, user } = useAuth();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -65,9 +66,12 @@ function LoginForm() {
       return;
     }
 
-    // Redirecionar baseada no destino ou dashboard específico
-    const destination = redirectTo && redirectTo !== "/login" ? redirectTo : "/admin";
-    window.location.href = destination;
+    // Aguardar um momento para garantir que o estado do usuário foi atualizado
+    setTimeout(() => {
+      // Redirecionar baseada no destino ou dashboard específico
+      const destination = redirectTo && redirectTo !== "/login" ? redirectTo : "/admin";
+      router.push(destination);
+    }, 100);
   };
 
   const handleGoogleSignIn = () => {

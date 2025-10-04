@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "TURGUIDE - Explore a Itália com quem entende",
   description: "Descubra a magia da Itália com roteiros personalizados, guias locais experientes e experiências autênticas. Turismo romântico, em grupo e cultural.",
+  icons: {
+    icon: 'data:,',
+  },
 };
 
 export default function RootLayout({
@@ -26,6 +29,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="data:," />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
