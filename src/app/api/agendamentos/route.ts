@@ -6,16 +6,11 @@ import {
 
 export async function GET() {
   try {
-    console.log('🔄 Buscando agendamentos no banco...');
     const agendamentos = await listAgendamentos();
-    console.log(`✅ ${agendamentos.length} agendamentos encontrados`);
     return NextResponse.json(agendamentos);
   } catch (error) {
-    console.error('❌ Erro ao listar agendamentos:', error);
-    console.error('Stack:', error instanceof Error ? error.stack : 'N/A');
-    
+    console.error('Erro ao listar agendamentos:', error);
     // Retornar array vazio em caso de erro para não quebrar a interface
-    console.log('📦 Retornando array vazio devido ao erro');
     return NextResponse.json([]);
   }
 }

@@ -451,28 +451,23 @@ const AgendamentosPage: React.FC = () => {
   ) => {
     setLoadingAgendamentos(true);
     try {
-      console.log('🔄 Buscando agendamentos...');
       const response = await fetch('/api/agendamentos', {
         headers: { 'Cache-Control': 'no-cache' },
       });
       
-      console.log('📡 Status da resposta:', response.status);
-      
       const payload = await response.json();
-      console.log('📦 Dados recebidos:', payload);
       
       const normalized: Tarefa[] = (Array.isArray(payload) ? payload : []).map((item: any, index: number) =>
         normalizeAgendamento(item, { passeios: passeiosData, clientes: clientesData, guias: guiasData }, index),
       );
       
-      console.log(`✅ ${normalized.length} agendamentos normalizados`);
       setAgendamentos(normalized);
       
       if (normalized.length === 0) {
         toast.info('Nenhum agendamento encontrado. Crie o primeiro agendamento!');
       }
     } catch (error) {
-      console.error('❌ Erro ao carregar agendamentos:', error);
+      console.error('Erro ao carregar agendamentos:', error);
       toast.error('Não foi possível carregar os agendamentos.');
       setAgendamentos([]);
     } finally {
