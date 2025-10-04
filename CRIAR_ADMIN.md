@@ -69,44 +69,98 @@ $ ./criar-admin.sh
 
 ---
 
-## 🗄️ Forma 2: SQL Direto no Supabase
+## 🗄️ Forma 2: SQL Direto no Supabase (Manual)
 
-Se preferir criar manualmente no Supabase Dashboard:
+⚠️ **IMPORTANTE:** Este método tem **2 PASSOS OBRIGATÓRIOS**:
 
-### Passo 1: Criar Usuário no Auth
+**Passo 1:** Criar usuário no Auth **COM SENHA** (pela interface)
+**Passo 2:** Executar SQL para torná-lo admin
+
+**❌ SEM O PASSO 1, O USUÁRIO NÃO TERÁ SENHA!**
+
+---
+
+### Passo 1: Criar Usuário no Auth (COM SENHA)
+
+**🚨 NÃO PULE ESTE PASSO! É AQUI QUE A SENHA É CRIADA!**
 
 1. Acesse: https://app.supabase.com
 2. Selecione seu projeto
 3. Vá em **Authentication** → **Users**
-4. Clique em **"Add User"** ou **"Invite User"**
-5. Preencha:
-   - **Email:** `admin@turguide.com`
-   - **Password:** (escolha uma senha segura)
-   - **Auto Confirm User:** ✅ Marque esta opção
-   - **User Metadata:** (opcional)
+4. Clique em **"Add User"** (botão verde no canto superior direito)
+5. **Preencha TODOS os campos:**
+
+   | Campo | Valor |
+   |-------|-------|
+   | **Email** | `admin@turguide.com` |
+   | **Password** | `Admin123!` (ou outra senha forte) |
+   | **Auto Confirm User** | ✅ **MARQUE ESTA CAIXA!** |
+   | **User Metadata** | Deixe em branco |
+
 6. Clique em **"Create User"**
+7. ✅ Aguarde a mensagem de sucesso
 
-### Passo 2: Inserir na Tabela Users
+**Agora o usuário TEM senha e pode fazer login!**
 
-1. Vá em **SQL Editor**
-2. Execute este SQL:
+---
+
+### Passo 2: Tornar o Usuário Admin (SQL)
+
+**Agora execute o SQL para dar permissão de admin:**
+
+1. No menu lateral, vá em **SQL Editor**
+2. Clique em **"New Query"**
+3. **Cole este SQL:**
 
 ```sql
--- Inserir ou atualizar usuário como admin
+-- ⚠️ ATENÇÃO: Este SQL apenas ATUALIZA a tabela users
+-- Ele NÃO cria senha! A senha foi criada no Passo 1.
+
 INSERT INTO users (id, email, nome, user_type)
-SELECT 
+SELECT
     id,
     email,
     'Administrador Sistema' as nome,
     'admin' as user_type
 FROM auth.users
 WHERE email = 'admin@turguide.com'
-ON CONFLICT (email) 
-DO UPDATE SET user_type = 'admin', nome = 'Administrador Sistema';
+ON CONFLICT (email)
+DO UPDATE SET
+    user_type = 'admin',
+    nome = 'Administrador Sistema';
 ```
 
-3. Clique em **"Run"**
-4. Verifique a mensagem: **"Success. 1 row affected"**
+4. Clique em **"Run"** (ou Ctrl/Cmd + Enter)
+5. ✅ Deve aparecer: **"Success. 1 row affected"**
+
+---
+
+### ✅ Verificar se Admin Foi Criado Corretamente
+
+Execute este SQL para confirmar:
+
+```sql
+-- Verificar se tudo está OK
+SELECT
+    u.id,
+    u.email,
+    u.nome,
+    u.user_type,
+    au.email_confirmed_at as confirmado_em,
+    au.created_at
+FROM users u
+JOIN auth.users au ON u.id = au.id
+WHERE u.email = 'admin@turguide.com';
+```
+
+**Deve retornar:**
+- ✅ `user_type`: `admin`
+- ✅ `email_confirmed_at`: uma data (não NULL)
+- ✅ `nome`: `Administrador Sistema`
+
+**Se `email_confirmed_at` for NULL:**
+- Você esqueceu de marcar "Auto Confirm User" no Passo 1
+- O usuário precisará confirmar email antes de fazer login
 
 ---
 
