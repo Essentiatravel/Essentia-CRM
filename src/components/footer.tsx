@@ -23,14 +23,16 @@ export default function Footer() {
               <Button 
                 size="icon" 
                 variant="outline" 
-                className="border-gray-600 hover:bg-blue-600 hover:border-blue-600"
+                className="border-pink-500 bg-gradient-to-br from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white border-0"
+                aria-label="Instagram"
               >
                 <Instagram className="w-4 h-4" />
               </Button>
               <Button 
                 size="icon" 
                 variant="outline"
-                className="border-gray-600 hover:bg-green-600 hover:border-green-600"
+                className="border-green-500 bg-green-500 hover:bg-green-600 text-white border-0"
+                aria-label="WhatsApp"
               >
                 <MessageCircle className="w-4 h-4" />
               </Button>
