@@ -17,6 +17,18 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ESSENTIA TRAVEL - Explore a Itália com quem entende",
   description: "Descubra a magia da Itália com roteiros personalizados, guias locais experientes e experiências autênticas. Turismo romântico, em grupo e cultural.",
+  openGraph: {
+    title: "ESSENTIA TRAVEL - Explore a Itália com quem entende",
+    description: "Descubra a magia da Itália com roteiros personalizados, guias locais experientes e experiências autênticas.",
+    type: "website",
+    locale: "pt_BR",
+    siteName: "ESSENTIA TRAVEL",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ESSENTIA TRAVEL - Explore a Itália com quem entende",
+    description: "Descubra a magia da Itália com roteiros personalizados, guias locais experientes e experiências autênticas.",
+  },
 };
 
 export default function RootLayout({
