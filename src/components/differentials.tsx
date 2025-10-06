@@ -62,7 +62,7 @@ export default function Differentials() {
           className="text-center mb-16"
         >
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-800">
-            Por que escolher a TURGUIDE?
+            Por que escolher a ESSENTIA TRAVEL?
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Mais de 10 anos conectando brasileiros à verdadeira essência da Itália

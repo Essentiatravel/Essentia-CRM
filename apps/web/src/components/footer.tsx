@@ -15,7 +15,7 @@ export default function Footer() {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h3 className="text-2xl font-bold text-blue-400 mb-4">TURGUIDE</h3>
+            <h3 className="text-2xl font-bold text-blue-400 mb-4">ESSENTIA TRAVEL</h3>
             <p className="text-gray-300 leading-relaxed mb-6">
               Explore a Itália com quem entende. Sua jornada dos sonhos começa aqui.
             </p>
@@ -132,7 +132,7 @@ export default function Footer() {
           className="flex flex-col md:flex-row justify-between items-center"
         >
           <div className="text-gray-400 text-sm mb-4 md:mb-0">
-            © 2024 TURGUIDE. Todos os direitos reservados.
+            © 2024 ESSENTIA TRAVEL. Todos os direitos reservados.
           </div>
           <div className="flex space-x-6 text-sm">
             <a href="#" className="text-gray-400 hover:text-blue-400 transition-colors">

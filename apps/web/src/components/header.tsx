@@ -140,7 +140,7 @@ export default function Header() {
                 {/* Header do Menu */}
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center">
-                    <h1 className="text-xl font-bold text-blue-600">TURGUIDE</h1>
+                    <h1 className="text-xl font-bold text-blue-600">ESSENTIA TRAVEL</h1>
                   </div>
                   <Button
                     variant="ghost"
