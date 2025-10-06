@@ -11,6 +11,7 @@ import { Eye, EyeOff, LogIn, MapPin, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
+import { getDashboardRoute, type UserType } from "@/lib/auth-redirect";
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -72,34 +73,35 @@ function LoginForm() {
       const { data: { user: authUser } } = await supabase.auth.getUser();
 
       if (authUser) {
-        const { data: userProfile } = await supabase
+        console.log("🔍 [Login] Auth User ID:", authUser.id);
+        console.log("🔍 [Login] Auth User Email:", authUser.email);
+
+        const { data: userProfile, error: profileError } = await supabase
           .from("users")
-          .select("user_type")
+          .select("*")
           .eq("id", authUser.id)
           .single();
 
-        const userType = userProfile?.user_type;
+        console.log("🔍 [Login] User Profile:", userProfile);
+        console.log("🔍 [Login] Profile Error:", profileError);
+
+        const userType = userProfile?.user_type as UserType | undefined;
+        console.log("🔍 [Login] User Type encontrado:", userType);
 
         // Se tem redirect específico, usar ele
         if (redirectTo && redirectTo !== "/login") {
+          console.log("➡️ [Login] Usando redirect específico:", redirectTo);
           router.push(redirectTo);
           return;
         }
 
-        // Redirecionar baseado no user_type
-        if (userType === "admin") {
-          router.push("/admin");
-        } else if (userType === "guia") {
-          router.push("/guia");
-        } else if (userType === "cliente") {
-          router.push("/cliente");
-        } else {
-          // Fallback para home
-          router.push("/");
-        }
+        // Usar utilitário para obter rota do dashboard
+        const dashboardRoute = getDashboardRoute(userType);
+        console.log("➡️ [Login] Redirecionando para:", dashboardRoute);
+        router.push(dashboardRoute);
       }
     } catch (error) {
-      console.error("Erro ao buscar tipo de usuário:", error);
+      console.error("❌ [Login] Erro ao buscar tipo de usuário:", error);
       router.push("/");
     }
   };

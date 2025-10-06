@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { getDashboardRoute, type UserType } from "@/lib/auth-redirect";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -22,21 +23,27 @@ export default function ProtectedRoute({
   useEffect(() => {
     if (loading) return;
 
+    console.log("🔒 [ProtectedRoute] Verificando acesso");
+    console.log("🔒 [ProtectedRoute] User:", user);
+    console.log("🔒 [ProtectedRoute] UserType:", user?.userType);
+    console.log("🔒 [ProtectedRoute] Allowed Types:", allowedTypes);
+    console.log("🔒 [ProtectedRoute] Pathname:", pathname);
+
     if (!user) {
+      console.log("⛔ [ProtectedRoute] Usuário não autenticado, redirecionando para login");
       router.push(`/login?redirect=${encodeURIComponent(pathname ?? redirectTo)}`);
       return;
     }
 
     if (user.userType && !allowedTypes.includes(user.userType)) {
-      if (user.userType === "admin") {
-        router.push("/admin");
-      } else if (user.userType === "guia") {
-        router.push("/guia");
-      } else if (user.userType === "cliente") {
-        router.push("/cliente");
-      } else {
-        router.push(redirectTo);
-      }
+      console.log("⛔ [ProtectedRoute] Usuário não tem permissão. Redirecionando...");
+
+      // Usar utilitário para obter rota correta
+      const dashboardRoute = getDashboardRoute(user.userType as UserType);
+      console.log("➡️ [ProtectedRoute] Redirecionando para:", dashboardRoute);
+      router.push(dashboardRoute);
+    } else {
+      console.log("✅ [ProtectedRoute] Acesso permitido");
     }
   }, [user, loading, allowedTypes, redirectTo, router, pathname]);
 

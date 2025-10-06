@@ -53,12 +53,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq("id", userId)
         .maybeSingle();
 
+      console.log("📊 [AuthContext] fetchUserProfile - userId:", userId);
+      console.log("📊 [AuthContext] fetchUserProfile - data:", data);
+      console.log("📊 [AuthContext] fetchUserProfile - error:", error);
+
       if (error || !data) {
+        console.log("⚠️ [AuthContext] Nenhum perfil encontrado na tabela users");
         return null;
       }
 
       const [firstName, ...lastNameParts] = (data.nome || "").split(" ");
-      return {
+      const profile = {
         id: data.id,
         email: data.email,
         nome: data.nome,
@@ -70,7 +75,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         data_nascimento: data.dataNascimento,
         cpf: data.cpf,
       };
+
+      console.log("✅ [AuthContext] Perfil carregado - userType:", profile.userType);
+      return profile;
     } catch (error) {
+      console.error("❌ [AuthContext] Erro ao buscar perfil:", error);
       return null;
     }
   };
