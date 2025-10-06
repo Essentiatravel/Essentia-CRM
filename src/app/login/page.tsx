@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, LogIn, MapPin, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -66,12 +67,41 @@ function LoginForm() {
       return;
     }
 
-    // Aguardar um momento para garantir que o estado do usuário foi atualizado
-    setTimeout(() => {
-      // Redirecionar baseada no destino ou dashboard específico
-      const destination = redirectTo && redirectTo !== "/login" ? redirectTo : "/admin";
-      router.push(destination);
-    }, 100);
+    // Buscar o user_type diretamente do banco após login
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+
+      if (authUser) {
+        const { data: userProfile } = await supabase
+          .from("users")
+          .select("user_type")
+          .eq("id", authUser.id)
+          .single();
+
+        const userType = userProfile?.user_type;
+
+        // Se tem redirect específico, usar ele
+        if (redirectTo && redirectTo !== "/login") {
+          router.push(redirectTo);
+          return;
+        }
+
+        // Redirecionar baseado no user_type
+        if (userType === "admin") {
+          router.push("/admin");
+        } else if (userType === "guia") {
+          router.push("/guia");
+        } else if (userType === "cliente") {
+          router.push("/cliente");
+        } else {
+          // Fallback para home
+          router.push("/");
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao buscar tipo de usuário:", error);
+      router.push("/");
+    }
   };
 
   return (
