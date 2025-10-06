@@ -46,13 +46,22 @@ export default function AdminLayout({
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Carregando...</p>
+          <p className="mt-2 text-xs text-gray-400">Aguardando autenticação...</p>
         </div>
       </div>
     );
   }
 
   if (!user || user.userType !== 'admin') {
-    return null;
+    console.log('🚫 AdminLayout - Bloqueando acesso:', { user: !!user, userType: user?.userType });
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <p className="text-gray-600">Acesso negado. Redirecionando...</p>
+          <p className="text-xs text-gray-400 mt-2">UserType: {user?.userType || 'undefined'}</p>
+        </div>
+      </div>
+    );
   }
 
   return (
