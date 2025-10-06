@@ -26,30 +26,6 @@ export default function HeroSection() {
           background: 'linear-gradient(to top, rgba(0, 0, 0, 0.2), transparent)',
         }}
       />
-
-      {/* Admin Access Button - Top Right */}
-      <div className="absolute top-4 right-4 z-20">
-        <Button
-          onClick={() => {
-            // Simula login setando dados do usuário no localStorage e vai para admin
-            const adminUser = {
-              id: "demo-admin-user",
-              email: "admin@turguide.com",
-              firstName: "Admin",
-              lastName: "User",
-              profileImageUrl: null,
-              userType: "admin",
-              authenticated: true
-            };
-            localStorage.setItem('auth-user', JSON.stringify(adminUser));
-            window.location.href = '/admin';
-          }}
-          className="bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all"
-          size="sm"
-        >
-          🔑 Acesso Admin
-        </Button>
-      </div>
       
       {/* Content */}
       <div className="relative z-10 text-center text-white px-4 max-w-4xl mx-auto">
