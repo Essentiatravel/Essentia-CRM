@@ -219,7 +219,7 @@ const CalendarioGlobal: React.FC = () => {
     return (
       <div className="flex h-screen bg-gray-50">
         <Sidebar user={user} onLogout={logout} />
-        <div className="flex-1 lg:ml-64 ml-0 flex items-center justify-center">
+        <div className="flex-1 lg:ml-05 ml-0 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
             <p className="text-gray-600 mt-2">Carregando calendário...</p>
@@ -233,7 +233,7 @@ const CalendarioGlobal: React.FC = () => {
     <div className="flex h-screen bg-gray-50">
       <Sidebar user={user} onLogout={logout} />
       
-      <div className="flex-1 lg:ml-64 ml-0">
+      <div className="flex-1 lg:ml-05 ml-0">
         <div className="p-4 lg:p-8">
           {/* Cabeçalho */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
