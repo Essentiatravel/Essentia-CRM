@@ -1,6 +1,29 @@
 "use client";
+import type { CSSProperties } from "react";
 import { motion } from "framer-motion";
 import { Button } from "./ui/button";
+
+const HERO_BACKGROUND_STYLE: CSSProperties = {
+  backgroundColor: "#2563EB",
+  backgroundImage:
+    "linear-gradient(135deg, #2563EB 0%, #3B82F6 45%, #FB923C 100%)",
+  backgroundRepeat: "no-repeat",
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+};
+
+const HERO_OVERLAY_STYLE: CSSProperties = {
+  backgroundImage:
+    "linear-gradient(180deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0) 65%)",
+};
+
+const HERO_HIGHLIGHTS_STYLE: CSSProperties = {
+  backgroundImage: [
+    "radial-gradient(circle at 20% 25%, rgba(255, 255, 255, 0.28), transparent 60%)",
+    "radial-gradient(circle at 80% 10%, rgba(255, 255, 255, 0.2), transparent 55%)",
+  ].join(", "),
+  mixBlendMode: "screen",
+};
 
 export default function HeroSection() {
   const scrollToSection = (sectionId: string) => {
@@ -11,20 +34,19 @@ export default function HeroSection() {
   };
 
   return (
-    <section className="min-h-screen flex items-center justify-center relative overflow-hidden">
-      {/* Background Gradient - Safari Compatible */}
-      <div 
-        className="absolute inset-0 bg-gradient-to-br from-blue-600 via-blue-500 to-orange-400"
-        style={{
-          background: 'linear-gradient(to bottom right, rgb(37, 99, 235), rgb(59, 130, 246), rgb(251, 146, 60))',
-          WebkitBackgroundClip: 'padding-box',
-        }}
+    <section
+      className="relative flex min-h-screen items-center justify-center overflow-hidden"
+      style={HERO_BACKGROUND_STYLE}
+    >
+      {/* Soft dark overlay to keep legibility */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={HERO_OVERLAY_STYLE}
       />
-      <div 
-        className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"
-        style={{
-          background: 'linear-gradient(to top, rgba(0, 0, 0, 0.2), transparent)',
-        }}
+      {/* Subtle highlight accents to mimic the original glow */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={HERO_HIGHLIGHTS_STYLE}
       />
       
       {/* Content */}
@@ -61,7 +83,7 @@ export default function HeroSection() {
         
         {/* Decorative elements */}
         <motion.div
-          className="absolute -top-4 -right-4 w-24 h-24 bg-orange-300/20 rounded-full blur-xl"
+          className="pointer-events-none absolute -top-4 -right-4 h-24 w-24 rounded-full bg-orange-300/20 blur-xl"
           animate={{ 
             scale: [1, 1.2, 1],
             rotate: [0, 360],
@@ -73,7 +95,7 @@ export default function HeroSection() {
           }}
         />
         <motion.div
-          className="absolute -bottom-8 -left-8 w-32 h-32 bg-blue-300/20 rounded-full blur-xl"
+          className="pointer-events-none absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-blue-300/20 blur-xl"
           animate={{ 
             scale: [1.2, 1, 1.2],
             rotate: [360, 0],
