@@ -15,14 +15,18 @@ export default function AdminLayout({
   const router = useRouter();
 
   useEffect(() => {
+    console.log('🏠 AdminLayout - Estado:', { loading, user: user?.email, userType: user?.userType });
+
     if (loading) return;
 
     if (!user) {
+      console.log('❌ AdminLayout - Sem usuário, redirecionando para login');
       router.push('/login?redirect=/admin');
       return;
     }
 
     if (user.userType !== 'admin') {
+      console.log('❌ AdminLayout - Tipo não é admin:', user.userType);
       // Redirecionar para área correta
       if (user.userType === 'guia') {
         router.push('/guia');
@@ -31,6 +35,8 @@ export default function AdminLayout({
       } else {
         router.push('/login');
       }
+    } else {
+      console.log('✅ AdminLayout - Acesso permitido!');
     }
   }, [user, loading, router]);
 
