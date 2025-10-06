@@ -1,6 +1,5 @@
 "use client";
 import { Button } from "./ui/button";
-import { ModeToggle } from "./mode-toggle";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { User, LogOut, Menu, X } from "lucide-react";
@@ -111,7 +110,6 @@ export default function Header() {
               </Link>
             </div>
           )}
-          <ModeToggle />
         </div>
       </div>
 
