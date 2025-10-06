@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, LogIn, MapPin, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -65,9 +66,34 @@ function LoginForm() {
       return;
     }
 
-    // Redirecionar baseada no destino ou dashboard específico
-    const destination = redirectTo && redirectTo !== "/login" ? redirectTo : "/admin";
-    window.location.href = destination;
+    // Buscar dados do usuário para obter o userType
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (session?.user?.id) {
+      const { data: userData } = await supabase
+        .from("users")
+        .select("user_type")
+        .eq("id", session.user.id)
+        .maybeSingle();
+
+      const userType = userData?.user_type;
+      console.log('🔍 Login - userType detectado:', userType);
+
+      // Redirecionar baseado no userType
+      if (redirectTo && redirectTo !== "/login") {
+        window.location.href = redirectTo;
+      } else if (userType === "admin") {
+        window.location.href = "/admin";
+      } else if (userType === "guia") {
+        window.location.href = "/guia";
+      } else {
+        window.location.href = "/cliente";
+      }
+    } else {
+      // Fallback se não conseguir determinar o tipo
+      const destination = redirectTo && redirectTo !== "/login" ? redirectTo : "/admin";
+      window.location.href = destination;
+    }
   };
 
   return (
