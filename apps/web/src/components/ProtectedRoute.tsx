@@ -20,14 +20,24 @@ export default function ProtectedRoute({
   const pathname = usePathname();
 
   useEffect(() => {
+    console.log('🔒 ProtectedRoute - verificando acesso:', {
+      loading,
+      user: user?.email,
+      userType: user?.userType,
+      allowedTypes,
+      pathname
+    });
+
     if (loading) return;
 
     if (!user) {
+      console.log('❌ ProtectedRoute - sem usuário, redirecionando para login');
       router.push(`/login?redirect=${encodeURIComponent(pathname ?? redirectTo)}`);
       return;
     }
 
     if (user.userType && !allowedTypes.includes(user.userType)) {
+      console.log('❌ ProtectedRoute - tipo não permitido:', user.userType, 'permitidos:', allowedTypes);
       if (user.userType === "admin") {
         router.push("/admin");
       } else if (user.userType === "guia") {
@@ -37,6 +47,8 @@ export default function ProtectedRoute({
       } else {
         router.push(redirectTo);
       }
+    } else {
+      console.log('✅ ProtectedRoute - acesso permitido');
     }
   }, [user, loading, allowedTypes, redirectTo, router, pathname]);
 

@@ -59,13 +59,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const [firstName, ...lastNameParts] = (data.nome || "").split(" ");
+      const userType = data.user_type || data.userType;
+      console.log('📊 AuthContext - fetchUserProfile:', {
+        user_type_db: data.user_type,
+        userType_db: data.userType,
+        userType_final: userType
+      });
+
       return {
         id: data.id,
         email: data.email,
         nome: data.nome,
         firstName: firstName || "",
         lastName: lastNameParts.join(" ") || "",
-        userType: data.user_type || data.userType, // Aceitar ambos os nomes
+        userType: userType,
         telefone: data.telefone,
         endereco: data.endereco,
         data_nascimento: data.dataNascimento,
